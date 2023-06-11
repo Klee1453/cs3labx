@@ -1,7 +1,4 @@
-*.xpr
-*.cache/
-*.hw/
-*.ip_user_files/
-*.sim/
-*.pdf
-*.zip
+/*
+!/.gitignore
+!/README.md
+!/labx.srcs/
