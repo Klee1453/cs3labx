@@ -18,6 +18,8 @@ module RAM_B(
     reg[7:0] data[0:SIZE-1];
 
     initial	begin
+        // To read data into data storage using $readmemh
+        // you need to change the argument in this function to the **absolute** path of your local hex file
         $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\Lab1\\src\\lab1\\lab1.sim\\sim_1\\behav\\xsim\\ram.hex", data);
     end
 
