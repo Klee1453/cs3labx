@@ -8,7 +8,7 @@ module CtrlUnit(
          MIO, rs1use, rs2use,
          output [1:0] hazard_optype,
          output [2:0] ImmSel, cmp_ctrl,
-         output [3:0] ALUControl,
+         output [4:0] ALUControl,
          output JALR,
          output J
        );
@@ -135,30 +135,42 @@ assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | 
 assign ALUSrc_B = ~(R_valid | Rw_valid | B_valid);  // to fill sth. in
                                                     // 1 -> ALU_inputB = Imm_EXE, 0 -> ALU_inputB = rs2_EXE
 
-parameter ALU_ADD  = 4'b0001;
-parameter ALU_SUB  = 4'b0010;
-parameter ALU_AND  = 4'b0011;
-parameter ALU_OR   = 4'b0100;
-parameter ALU_XOR  = 4'b0101;
-parameter ALU_SLL  = 4'b0110;
-parameter ALU_SRL  = 4'b0111;
-parameter ALU_SLT  = 4'b1000;
-parameter ALU_SLTU = 4'b1001;
-parameter ALU_SRA  = 4'b1010;
-parameter ALU_Ap4  = 4'b1011;
-parameter ALU_Bout = 4'b1100;
-assign ALUControl = {4{ADD | ADDI | ADDW | ADDIW | L_valid | S_valid | AUIPC}} & ALU_ADD  |
-       {4{SUB  | SUBW}}                            & ALU_SUB  |
-       {4{AND  | ANDI}}                            & ALU_AND  |
-       {4{OR   | ORI}}                             & ALU_OR   |
-       {4{XOR  | XORI}}                            & ALU_XOR  |
-       {4{SLL  | SLLI | SLLW | SLLIW}}             & ALU_SLL  |
-       {4{SRL  | SRLI | SRLW | SRLIW}}             & ALU_SRL  |
-       {4{SLT  | SLTI}}                            & ALU_SLT  |
-       {4{SLTU | SLTIU}}                           & ALU_SLTU |
-       {4{SRA  | SRAI | SRAW | SRAIW}}             & ALU_SRA  |
-       {4{JAL  | JALR}}                            & ALU_Ap4  |
-       {4{LUI}}                                    & ALU_Bout ;
+parameter ALU_ADD  = 5'b00001;
+parameter ALU_SUB  = 5'b00010;
+parameter ALU_AND  = 5'b00011;
+parameter ALU_OR   = 5'b00100;
+parameter ALU_XOR  = 5'b00101;
+parameter ALU_SLL  = 5'b00110;
+parameter ALU_SRL  = 5'b00111;
+parameter ALU_SLT  = 5'b01000;
+parameter ALU_SLTU = 5'b01001;
+parameter ALU_SRA  = 5'b01010;
+parameter ALU_Ap4  = 5'b01011;
+parameter ALU_Bout = 5'b01100;
+parameter ALU_ADDW = 5'b10001;   // The highest bit = 1 indicates -w instruction in RV64I
+parameter ALU_SUBW = 5'b10010;
+parameter ALU_SLLW = 5'b10110;
+parameter ALU_SRLW = 5'b10111;
+parameter ALU_SRAW = 5'b11010;
+
+assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC}} & ALU_ADD  |
+                    {5{SUB}}                                    & ALU_SUB  |
+                    {5{AND  | ANDI}}                            & ALU_AND  |
+                    {5{OR   | ORI}}                             & ALU_OR   |
+                    {5{XOR  | XORI}}                            & ALU_XOR  |
+                    {5{SLL  | SLLI}}                            & ALU_SLL  |
+                    {5{SRL  | SRLI}}                            & ALU_SRL  |
+                    {5{SLT  | SLTI}}                            & ALU_SLT  |
+                    {5{SLTU | SLTIU}}                           & ALU_SLTU |
+                    {5{SRA  | SRAI}}                            & ALU_SRA  |
+                    {5{JAL  | JALR}}                            & ALU_Ap4  |
+                    {5{LUI}}                                    & ALU_Bout |
+                    {5{ADDW}}                                   & ALU_ADDW |
+                    {5{SUBW}}                                   & ALU_SUBW |
+                    {5{SLLW | SLLIW}}                           & ALU_SLLW |
+                    {5{SRLW | SRLIW}}                           & ALU_SRLW |
+                    {5{SRAW | SRAIW}}                           & ALU_SRAW ;
+
 
 assign DatatoReg = L_valid;
 

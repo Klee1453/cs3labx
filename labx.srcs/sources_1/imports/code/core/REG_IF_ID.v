@@ -10,6 +10,7 @@
 // Target Devices:
 // Tool versions:
 // Description:
+// Use GB2312 Encoding
 //
 // Dependencies:
 //
@@ -24,18 +25,18 @@ module    REG_IF_ID(input clk,                                      //IF/ID Latc
                     input EN,                                       //流水寄存器使能
                     input Data_stall,                               //数据竞争等待
                     input flush,                                    //控制竞争清除并等待
-                    input [31:0] PCOUT,                             //指令存储器指针
+                    input [63:0] PCOUT,                             //指令存储器指针
                     input [31:0] IR,                                //指令存储器输出
 
                     output reg[31:0] IR_ID,                         //取指锁存
-                    output reg[31:0] PCurrent_ID                    //当前存在指令地址
+                    output reg[63:0] PCurrent_ID                    //当前存在指令地址
                 );
 
 //reg[31:0]PCurrent_ID,IR_ID;
     always @(posedge clk or posedge rst) begin
         if(rst) begin
              IR_ID <= 32'h00000000;                            //复位清零
-             PCurrent_ID <= 32'h00000000;                     //复位清零
+             PCurrent_ID <= 64'h00000000;                     //复位清零
             end
         else if(EN)begin
                 if(Data_stall)begin

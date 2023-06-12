@@ -24,9 +24,9 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
                     input EN,                                       //流水寄存器使�?
                     input flush,                                    //异常时清除异常指令并等待中断处理(保留)�?
                     input [31:0] IR_EX,                             //当前执行指令(测试)
-                    input [31:0] PCurrent_EX,                       //当前执行指令存储器指�?
-                    input [31:0] ALUO_EX,                           //当前ALU执行输出：有效地�?或ALU操作
-                    input [31:0] B_EX,                              //ID级读出寄存器B数据：CPU输出数据
+                    input [63:0] PCurrent_EX,                       //当前执行指令存储器指�?
+                    input [63:0] ALUO_EX,                           //当前ALU执行输出：有效地�?或ALU操作
+                    input [63:0] B_EX,                              //ID级读出寄存器B数据：CPU输出数据
                     input [4:0]  rd_EX,                             //传�?�当前指令写目的寄存器地�?
                     input DatatoReg_EX,                      //传�?�当前指令REG写数据�?�道选择
                     input RegWrite_EX,                              //传�?�当前指令寄存器写信�?
@@ -34,10 +34,10 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
                     input[2:0] u_b_h_w_EX,
                     input MIO_EX,
 
-                    output reg[31:0] PCurrent_MEM,                  //锁存传�?�当前指令地�?
+                    output reg[63:0] PCurrent_MEM,                  //锁存传�?�当前指令地�?
                     output reg[31:0] IR_MEM,                        //锁存传�?�当前指�?(测试)
-                    output reg[31:0] ALUO_MEM,                      //锁存ALU操作结果：有效地�?或ALU操作
-                    output reg[31:0] Datao_MEM,                     //锁存传�?�当前指令输出MIO数据
+                    output reg[63:0] ALUO_MEM,                      //锁存ALU操作结果：有效地�?或ALU操作
+                    output reg[63:0] Datao_MEM,                     //锁存传�?�当前指令输出MIO数据
                     output reg[4:0]  rd_MEM,                        //锁存传�?�当前指令写目的寄存器地�?
                     output reg       DatatoReg_MEM,                 //锁存传�?�当前指令REG写数据�?�道选择
                     output reg       RegWrite_MEM,                  //锁存传�?�当前指令寄存器写信�?

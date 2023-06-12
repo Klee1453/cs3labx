@@ -42,7 +42,7 @@ module Branch_Prediction(
     input clk,
     input rst,
     
-    input [7:0] PC_Branch,      /* 实际上是当前PC */
+    input [7:0]PC_Branch,       /* 实际上是当前PC */
     input [6:0]opcode_IF,       /* IF段的(当前PC对应的)指令的opcode 如果opcode不是跳转指令 则不进行预测 不修改BHT BTB */
     output taken,               /* 数据流向mux_IF_predict作为选择信号 */
     output [7:0]PC_to_take,     /* IF段预测跳转的地址, 数据流向mux_IF_predict作为跳转后得到next_pc_IF */

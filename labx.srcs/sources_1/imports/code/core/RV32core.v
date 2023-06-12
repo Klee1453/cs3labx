@@ -296,44 +296,48 @@ wire forward_ctrl_ls;
 wire[1:0] forward_ctrl_A, forward_ctrl_B;
 
 wire PC_EN_IF;
-wire [31:0] PC_IF, next_PC_IF, PC_4_IF, inst_IF;
+wire [63:0] PC_IF, next_PC_IF, PC_4_IF;
+wire [31:0] inst_IF;
 
 wire reg_FD_EN,reg_FD_stall,reg_FD_flush, cmp_res_ID;
-wire [31:0] jump_PC_ID, PC_ID, inst_ID, Debug_regs, rs1_data_reg, rs2_data_reg,
+wire [63:0] jump_PC_ID, PC_ID, Debug_regs, rs1_data_reg, rs2_data_reg,
      Imm_out_ID, rs1_data_ID, rs2_data_ID, addA_ID;
+wire [31:0] inst_ID;
 
 wire reg_DE_EN, reg_DE_flush, RegWrite_EXE, mem_w_EXE, MIO_EXE,
      ALUSrc_A_EXE, ALUSrc_B_EXE, ALUzero_EXE, ALUoverflow_EXE, DatatoReg_EXE;
 wire[2:0] u_b_h_w_EXE;
 wire[3:0] ALUControl_EXE;
 wire[4:0] rs1_EXE, rs2_EXE, rd_EXE;
-wire[31:0] ALUout_EXE, PC_EXE, inst_EXE, rs1_data_EXE, rs2_data_EXE, Imm_EXE,
+wire[63:0] ALUout_EXE, PC_EXE, rs1_data_EXE, rs2_data_EXE, Imm_EXE,
     ALUA_EXE, ALUB_EXE, Dataout_EXE;
+wire [31:0] inst_EXE;
 
 wire reg_EM_EN, reg_EM_flush, RegWrite_MEM, DatatoReg_MEM, mem_w_MEM, MIO_MEM;
 wire[2:0] u_b_h_w_MEM;
 wire[4:0] rd_MEM;
-wire[31:0] ALUout_MEM, PC_MEM, inst_MEM, Dataout_MEM, Datain_MEM;
-
+wire[63:0] ALUout_MEM, PC_MEM, Dataout_MEM, Datain_MEM;
+wire[31:0] inst_MEM;
 
 wire reg_MW_EN, RegWrite_WB, DatatoReg_WB;
 wire[4:0] rd_WB;
-wire [31:0] wt_data_WB, PC_WB, inst_WB, ALUout_WB, Datain_WB;
+wire [63:0] wt_data_WB, PC_WB, ALUout_WB, Datain_WB;
+wire [31:0] inst_WB;
 
 wire taken, refetch, j;
 wire [7:0] pc_to_take;
-wire [31:0] next_pc_IF, next_pc_ID;
+wire [63:0] next_pc_IF, next_pc_ID;
 
 // IF
-REG32 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF),.D(next_PC_IF),.Q(PC_IF));
+REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF),.D(next_PC_IF),.Q(PC_IF));
 
-add_32 add_IF(.a(PC_IF),.b(32'd4),.c(PC_4_IF));
+add_64 add_IF(.a(PC_IF),.b(64'd4),.c(PC_4_IF));
 
-MUX2T1_32 mux_IF_normal(.I0(PC_ID + 4),.I1(jump_PC_ID),.s(Branch_ctrl),.o(next_pc_ID));
-MUX2T1_32 mux_IF_predict(.I0(PC_4_IF),.I1({22'b0,pc_to_take,2'b0}),.s(taken),.o(next_pc_IF));
-MUX2T1_32 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
+MUX2T1_64 mux_IF_normal(.I0(PC_ID + 4),.I1(jump_PC_ID),.s(Branch_ctrl),.o(next_pc_ID));
+MUX2T1_64 mux_IF_predict(.I0(PC_4_IF),.I1({32'b0,22'b0,pc_to_take,2'b0}),.s(taken),.o(next_pc_IF));
+MUX2T1_64 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
 
-ROM_D inst_rom(.a(PC_IF[9:2]),.spo(inst_IF));
+ROM_D inst_rom(.a(PC_IF[9:2]),.spo(inst_IF));   // TODO: update to 64-bit & Von Neumann architecture
 
 Branch_Prediction branch_prediction(
         .clk(debug_clk),
@@ -370,17 +374,17 @@ Regs register(.clk(debug_clk),.rst(rst),.L_S(RegWrite_WB),.R_addr_A(inst_ID[19:1
 
 ImmGen imm_gen(.ImmSel(ImmSel_ctrl),.inst_field(inst_ID),.Imm_out(Imm_out_ID));
 
-MUX4T1_32 mux_forward_A(.I0(rs1_data_reg),.I1(ALUout_EXE),.I2(ALUout_MEM),.I3(Datain_MEM),
+MUX4T1_64 mux_forward_A(.I0(rs1_data_reg),.I1(ALUout_EXE),.I2(ALUout_MEM),.I3(Datain_MEM),
                         .s(forward_ctrl_A),.o(rs1_data_ID));  // to fill sth. in
 
-MUX4T1_32 mux_forward_B(.I0(rs2_data_reg),.I1(ALUout_EXE),.I2(ALUout_MEM),.I3(Datain_MEM),
+MUX4T1_64 mux_forward_B(.I0(rs2_data_reg),.I1(ALUout_EXE),.I2(ALUout_MEM),.I3(Datain_MEM),
                         .s(forward_ctrl_B),.o(rs2_data_ID));  // to fill sth. in
 
-MUX2T1_32 mux_branch_ID(.I0(PC_ID),.I1(rs1_data_ID),.s(JALR),.o(addA_ID));
+MUX2T1_64 mux_branch_ID(.I0(PC_ID),.I1(rs1_data_ID),.s(JALR),.o(addA_ID));
 
-add_32 add_branch_ID(.a(addA_ID),.b(Imm_out_ID),.c(jump_PC_ID));
+add_64 add_branch_ID(.a(addA_ID),.b(Imm_out_ID),.c(jump_PC_ID));
 
-cmp_32 cmp_ID(.a(rs1_data_ID),.b(rs2_data_ID),.ctrl(cmp_ctrl),.c(cmp_res_ID));
+cmp_64 cmp_ID(.a(rs1_data_ID),.b(rs2_data_ID),.ctrl(cmp_ctrl),.c(cmp_res_ID));
 
 HazardDetectionUnit hazard_unit(.clk(debug_clk),.Branch_ID(refetch),.rs1use_ID(rs1use_ctrl),
                                 .rs2use_ID(rs2use_ctrl),.hazard_optype_ID(hazard_optype_ctrl),.rd_EXE(rd_EXE),
@@ -406,15 +410,15 @@ REG_ID_EX reg_ID_EX(.clk(debug_clk),.rst(rst),.EN(reg_DE_EN),.flush(reg_DE_flush
                     .DatatoReg_EX(DatatoReg_EXE),.RegWrite_EX(RegWrite_EXE),.WR_EX(mem_w_EXE),
                     .u_b_h_w_EX(u_b_h_w_EXE),.MIO_EX(MIO_EXE));
 
-MUX2T1_32 mux_A_EXE(.I0(PC_EXE),.I1(rs1_data_EXE),.s(ALUSrc_A_EXE),.o(ALUA_EXE));  // to fill sth. in
+MUX2T1_64 mux_A_EXE(.I0(PC_EXE),.I1(rs1_data_EXE),.s(ALUSrc_A_EXE),.o(ALUA_EXE));  // to fill sth. in
 
-MUX2T1_32 mux_B_EXE(.I0(rs2_data_EXE),.I1(Imm_EXE),.s(ALUSrc_B_EXE),.o(ALUB_EXE));  // to fill sth. in
+MUX2T1_64 mux_B_EXE(.I0(rs2_data_EXE),.I1(Imm_EXE),.s(ALUSrc_B_EXE),.o(ALUB_EXE));  // to fill sth. in
 
 ALU alu(.A(ALUA_EXE),.B(ALUB_EXE),.Control(ALUControl_EXE),
         .res(ALUout_EXE),.zero(ALUzero_EXE),.overflow(ALUoverflow_EXE));
 
 // ld then st
-MUX2T1_32 mux_forward_EXE(.I0(rs2_data_EXE),.I1(Datain_MEM),.s(forward_ctrl_ls),.o(Dataout_EXE));  // to fill sth. in
+MUX2T1_64 mux_forward_EXE(.I0(rs2_data_EXE),.I1(Datain_MEM),.s(forward_ctrl_ls),.o(Dataout_EXE));  // to fill sth. in
 
 
 // MEM
@@ -440,11 +444,11 @@ REG_MEM_WB reg_MEM_WB(.clk(debug_clk),.rst(rst),.EN(reg_MW_EN),.IR_MEM(inst_MEM)
                       .PCurrent_WB(PC_WB),.IR_WB(inst_WB),.ALUO_WB(ALUout_WB),.MDR_WB(Datain_WB),
                       .rd_WB(rd_WB),.DatatoReg_WB(DatatoReg_WB),.RegWrite_WB(RegWrite_WB));
 
-MUX2T1_32 mux_WB(.I0(ALUout_WB),.I1(Datain_WB),.s(DatatoReg_WB),.o(wt_data_WB));
+MUX2T1_64 mux_WB(.I0(ALUout_WB),.I1(Datain_WB),.s(DatatoReg_WB),.o(wt_data_WB));
 
 
 wire [31:0] Test_signal;
-assign debug_data = debug_addr[5] ? Test_signal : Debug_regs;
+assign debug_data = debug_addr[5] ? Test_signal : Debug_regs[31:0];
 
 CPUTEST    U1_3(.PC_IF(PC_IF),
                 .PC_ID(PC_ID),

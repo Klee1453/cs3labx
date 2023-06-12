@@ -24,33 +24,35 @@ module    REG_ID_EX(input clk,                                         //ID/EX L
                     input EN,                                          //流水寄存器使�?
                     input flush,                                       //数据竞争清除并等待：DStall
                     input [31:0] IR_ID,                                //当前译码指令(测试)
-                    input [31:0] PCurrent_ID,                          //当前译码指令存储器指�?
+                    input [63:0] PCurrent_ID,                          //当前译码指令存储器指�?
                     input [4:0] rs1_addr,                               //当前指令读出寄存器A地址
                     input [4:0] rs2_addr,                               //当前指令读出寄存器B地址
-                    input [31:0] rs1_data,                             //当前指令读出寄存器A数据
-                    input [31:0] rs2_data,                             //当前指令读出寄存器A数据
-                    input [31:0] Imm32,                                //当前指令读出并扩�?32位立即数�?
+                    input [63:0] rs1_data,                             //当前指令读出寄存器A数据
+                    input [63:0] rs2_data,                             //当前指令读出寄存器A数据
+                    input [63:0] Imm32,                                //当前指令读出并扩�?32位立即数�?
+                                                                        // NOTE: Although it is called Imm32, it is actually a 64-bit immediate number
                     input [4:0]  rd_addr,                              //当前指令读出目的操作数地�?
                     input ALUSrc_A,                             //当前指令译码：ALU A通道控制
                     input ALUSrc_B,                             //当前指令译码：ALU B通道控制
-                    input [3:0]  ALUC,                                 //当前指令译码：ALU操作控制
+                    input [4:0]  ALUC,                                 //当前指令译码：ALU操作控制
                     input DatatoReg,                            //当前指令译码：REG写数据�?�道选择
                     input RegWrite,                                    //当前指令译码：寄存器写信�?
                     input WR,                                          //当前指令译码：存储器读写信号
                     input [2:0] u_b_h_w,
                     input MIO,
 
-                    output reg[31:0] PCurrent_EX,                      //锁存当前译码指令地址
+                    output reg[63:0] PCurrent_EX,                      //锁存当前译码指令地址
                     output reg[31:0] IR_EX,                            //锁存当前译码指令(测试)
                     output reg[4:0]  rs1_EX,
                     output reg[4:0]  rs2_EX,
-                    output reg[31:0] A_EX,                             //锁存当前译码指令读出寄存器A数据
-                    output reg[31:0] B_EX,                             //锁存当前译码指令读出寄存器B数据
-                    output reg[31:0] Imm32_EX,                          //锁存当前译码指令32位立即数�?
+                    output reg[63:0] A_EX,                             //锁存当前译码指令读出寄存器A数据
+                    output reg[63:0] B_EX,                             //锁存当前译码指令读出寄存器B数据
+                    output reg[63:0] Imm32_EX,                          //锁存当前译码指令32位立即数�?
+                                                                        // NOTE: Although it is called Imm32, it is actually a 64-bit immediate number
                     output reg[4:0]  rd_EX,                            //锁存当前译码指令写目的寄存器地址
                     output reg       ALUSrc_A_EX,                      //锁存当前译码指令ALU A通道控制
                     output reg       ALUSrc_B_EX,                      //锁存当前译码指令ALU B通道控制(保留)
-                    output reg[3:0]  ALUC_EX,                          //锁存当前译码指令ALU操作功能控制
+                    output reg[4:0]  ALUC_EX,                          //锁存当前译码指令ALU操作功能控制
                     output reg       DatatoReg_EX,                     //锁存当前译码指令REG写数据�?�道选择
                     output reg       RegWrite_EX,                      //锁存当前译码指令寄存器写信号
                     output reg       WR_EX,                            //锁存当前译码指令存储器读写信�?
@@ -64,7 +66,7 @@ module    REG_ID_EX(input clk,                                         //ID/EX L
         RegWrite_EX  <= 0;
         WR_EX        <= 0;
         IR_EX        <= 32'h00000000;
-        PCurrent_EX  <= 32'h00000000 ;
+        PCurrent_EX  <= 64'h00000000 ;
         rs1_EX       <= 0;
         rs2_EX       <= 0;
         MIO_EX       <= 0;
