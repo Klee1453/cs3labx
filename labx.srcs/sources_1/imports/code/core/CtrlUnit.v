@@ -9,21 +9,28 @@ module CtrlUnit(
          output [1:0] hazard_optype,
          output [2:0] ImmSel, cmp_ctrl,
          output [4:0] ALUControl,
+         output [2:0] exp_vector_ctrl,  // for identifying exceptions, [2|1|0] => [illegal_inst | sret | ecall], used in ExceptionUnit of stage WB
+         output csr_rw,                 // is CSR write-after-read instructions, used in ExceptionUnit of stage MEM
+         output csr_w_imm_mux,          // for identifying CSR write-after-read zimm or not, used in ExceptionUnit of stage MEM
          output JALR,
          output J
        );
 
 wire[6:0] funct7 = inst[31:25];
+wire[4:0] rs2    = inst[24:20];   // used only when identifying privileged instructions
+wire[4:0] rs1    = inst[19:15];   // used only when identifying privileged instructions
 wire[2:0] funct3 = inst[14:12];
+wire[4:0] rd     = inst[11:7];    // used only when identifying privileged instructions
 wire[6:0] opcode = inst[6:0];
 
-wire Rop  = opcode == 7'b0110011;
-wire Rwop = opcode == 7'b0111011;
-wire Iop  = opcode == 7'b0010011;
-wire Iwop = opcode == 7'b0011011;  // I-type word-wide (32-bit-wide)
-wire Bop  = opcode == 7'b1100011;
-wire Lop  = opcode == 7'b0000011;
-wire Sop  = opcode == 7'b0100011;
+wire Rop   = opcode == 7'b0110011;
+wire Rwop  = opcode == 7'b0111011;
+wire Iop   = opcode == 7'b0010011;
+wire Iwop  = opcode == 7'b0011011;  // I-type word-wide (32-bit-wide)
+wire Bop   = opcode == 7'b1100011;
+wire Lop   = opcode == 7'b0000011;
+wire Sop   = opcode == 7'b0100011;
+wire CSRop = opcode == 7'b1110011;  // Privileged instructions
 
 wire funct7_0  = funct7 == 7'h0;
 wire funct7_32 = funct7 == 7'h20;  // 7'b010000
@@ -93,6 +100,18 @@ wire AUIPC = (opcode == 7'b0010111);  // to fill sth. in
 wire JAL    = (opcode == 7'b1101111);  // to fill sth. in
 assign JALR = (opcode == 7'b1100111);  // to fill sth. in
 
+wire ECALL      = CSRop & (funct7 == 7'b0000000) & (rs2 == 5'b00000) & (rs1 == 5'b00000) & (funct3 == 3'b000) & (rd == 5'b00000);
+wire CSRRW      = CSRop & funct3_1;
+wire CSRRS      = CSRop & funct3_2;
+wire CSRRC      = CSRop & funct3_3;
+wire CSRRWI     = CSRop & funct3_5;
+wire CSRRSI     = CSRop & funct3_6;
+wire CSRRCI     = CSRop & funct3_7;
+wire SRET       = CSRop & (funct7 == 7'b0001000) & (rs2 == 5'b00010) & (rs1 == 5'b00000) & (funct3 == 3'b000) & (rd == 5'b00000);
+wire SFENCEVMA  = CSRop & (funct7 == 7'b0001001) & (funct3 == 3'b000) & (rd == 5'b00000);   // currently, it should works like a nop
+
+wire illegal_inst = 0;  // TODO
+
 wire R_valid  = AND | OR | ADD | XOR | SLL | SRL | SRA | SUB | SLT | SLTU;
 wire Rw_valid = ADDW | SUBW | SLLW | SRLW | SRAIW;
 wire I_valid  = ANDI | ORI | ADDI | XORI | SLLI | SRLI | SRAI | SLTI | SLTIU;
@@ -101,7 +120,7 @@ wire B_valid  = BEQ | BNE | BLT | BGE | BLTU | BGEU;
 wire L_valid  = LD | LW | LH | LB | LWU | LHU | LBU;
 wire S_valid  = SD | SW | SH | SB;
 
-assign Branch = cmp_res | JAL | JALR;  // to fill sth. in
+assign Branch = cmp_res | JAL | JALR | ECALL | SRET;  // to fill sth. in
 
 parameter Imm_type_I = 3'b001;
 parameter Imm_type_B = 3'b010;
@@ -170,7 +189,7 @@ assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC}} & ALU_ADD  |
                     {5{SLLW | SLLIW}}                           & ALU_SLLW |
                     {5{SRLW | SRLIW}}                           & ALU_SRLW |
                     {5{SRAW | SRAIW}}                           & ALU_SRAW ;
-
+// NOTE: CSR write-after-read is implemented in the Exception Unit (MEM) rather than ALU (EX), in order to decouple
 
 assign DatatoReg = L_valid;
 
@@ -186,6 +205,12 @@ assign rs2use = R_valid | Rw_valid | B_valid | S_valid;  // to fill sth. in
 
 // assign hazard_optype = ;  // to fill sth. in
 
-assign J = JAL | JALR | B_valid;
+assign J = JAL | JALR | B_valid | ECALL | SRET;
+
+assign exp_vector_ctrl = {illegal_inst, SRET, ECALL};
+
+assign csr_rw = CSRRW | CSRRS | CSRRC | CSRRWI | CSRRSI | CSRRCI;
+
+assign csr_w_imm_mux = CSRRWI | CSRRSI | CSRRCI;
 
 endmodule

@@ -21,6 +21,7 @@
 module   REG_MEM_WB(input clk,                                      //MEM/WB Latch
                     input rst,
                     input EN,                                       //流水寄存器使能
+                    input flush,                                    //FIXEME
                     input [31:0] IR_MEM,                             //当前执行指令(测试)
                     input [63:0] PCurrent_MEM,                       //当前执行指令存储器指针
                     input [63:0] ALUO_MEM,                           //当前ALU执行输出：有效地址或ALU操作
@@ -34,7 +35,9 @@ module   REG_MEM_WB(input clk,                                      //MEM/WB Lat
                     output reg[63:0] MDR_WB,                       //锁存MIO送CPU输入数据
                     output reg[4:0]  rd_WB,                        //锁存传递当前指令写目的寄存器地址
                     output reg       DatatoReg_WB,                 //锁存传递当前指令REG写数据通道选择
-                    output reg       RegWrite_WB                   //锁存传递当前指令寄存器写信号
+                    output reg       RegWrite_WB,                   //锁存传递当前指令寄存器写信号
+                    output isFlushed,                               //FIXME
+                    output exp_vector_WB                            //FIXME
                 );
 
     always @(posedge clk or posedge rst) begin

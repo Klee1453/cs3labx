@@ -1,48 +1,51 @@
 `timescale 1ns / 1ps
 
 module ExceptionUnit(
-         input clk, rst,
-         input csr_rw_in,
-         input[1:0] csr_wsc_mode_in,
-         input csr_w_imm_mux,
-         input[11:0] csr_rw_addr_in,
-         input[31:0] csr_w_data_reg,
-         input[4:0] csr_w_data_imm,
-         output[31:0] csr_r_data_out,
+        input clk, rst,
+                                            // [MEM]
+        input csr_rw_in,                    // used for identifying CSR write-after-read instructions
+        input[1:0] csr_wsc_mode_in,         // used for identifying CSR write-after-read mode (W, S, C), funct3[1:0]
+        input csr_w_imm_mux,                // used for identifying CSR write-after-read zimm instructions
+        input[11:0] csr_rw_addr_in,         // CSR registers address
+        input[63:0] csr_w_data_reg,         // genernal registers used in CSRRW, CSRRS, CSRRC
+        input[4:0] csr_w_data_imm,          // zimm in CSRR[W,S,C]I
+        output[63:0] csr_r_data_out,        // read data of CSR write-after-read instructions
 
-         input interrupt,
-         input illegal_inst,
-         input l_access_fault,
-         input s_access_fault,
-         input ecall_m,
+                                            // [WB]
+        input interrupt,                    // external interrupt source, for future use
+        input illegal_inst,                 // illegal instruct, from Control Unit
+        input l_access_fault,               // load  page fault, from MMU               
+        input s_access_fault,               // store page fault, from MMU
+        input inst_access_fault,            // inst  page fault, from MMU 
+        input ecall,                        // is ECALL inst, from Control Unit
+        input sret,                         // is SRET  inst, from Control Unit
 
-         input mret,
+        input[63:0] epc_cur,                // PC_WB, PC that triggered the exception
+        input[63:0] epc_next,               // The next VALID PC of the PC that triggered the exception          
+        output[63:0] PC_redirect,           // used in IF, next PC after exception triggered
+        output redirect_mux,                // used in IF, for final decision on PC
 
-         input[31:0] epc_cur,
-         input[31:0] epc_next,
-         output[31:0] PC_redirect,
-         output redirect_mux,
-
-         output reg_FD_flush, reg_DE_flush, reg_EM_flush, reg_MW_flush,
-         output RegWrite_cancel
+        output reg_FD_flush, reg_DE_flush, reg_EM_flush, reg_MW_flush,  // flush all instructions read in after a trap
+        output RegWrite_cancel                                          // fulsh all instructions read in after a trap
        );
 
 reg[11:0] csr_raddr, csr_waddr;
-reg[31:0] csr_wdata;
+reg[63:0] csr_wdata;
 reg csr_w;
 reg[1:0] csr_wsc;
 
-wire[31:0] mstatus;
+wire[63:0] sstatus;
 
-reg[31:0] mepc, mcause, mtval;
-wire[31:0] mtvec, mepc_o;
+reg[31:0] sepc, scause, stval;
+wire[31:0] stvec, sepc_o;
 
-assign exception = illegal_inst | l_access_fault | s_access_fault | ecall_m;
-assign trap = mstatus[3] & (interrupt | exception);
+assign exception = illegal_inst | l_access_fault | s_access_fault | inst_access_fault | ecall;
+// assign trap = sstatus[3] & (interrupt | exception);
+assign trap = interrupt | exception;
 
 CSRRegs csr(.clk(clk),.rst(rst),.csr_w(csr_w),.raddr(csr_raddr),.waddr(csr_waddr),
-            .wdata(csr_wdata),.rdata(csr_r_data_out),.mstatus(mstatus),.csr_wsc_mode(csr_wsc),
-            .is_trap(trap),.is_mret(mret),.mepc(mepc),.mcause(mcause),.mtval(mtval),.mtvec(mtvec),.mepc_o(mepc_o));
+            .wdata(csr_wdata),.rdata(csr_r_data_out),.sstatus(sstatus),.csr_wsc_mode(csr_wsc),
+            .is_trap(trap),.is_sret(sret),.sepc(sepc),.scause(scause),.stval(stval),.stvec(stvec),.sepc_o(sepc_o));
 
 //According to the diagram, design the Exception Unit
 
@@ -68,47 +71,52 @@ always @ *
         csr_waddr <= 0;
       end
 
-    if (interrupt & mstatus[3])
+    // if (interrupt & sstatus[3])
+    if (interrupt)
       begin
-        mepc <= epc_next;
-        mcause <= 32'h8000000B;  // Machine external interrupt
-        mtval <= 0;
+        sepc <= epc_next;
+        scause <= 32'h8000000B;  // Machine external interrupt
+        stval <= 0;
       end
-    else if (illegal_inst & mstatus[3])
+    // else if (illegal_inst & sstatus[3])
+    else if (illegal_inst)
       begin
-        mepc <= epc_cur;
-        mcause <= 2;
-        mtval <= 0;
+        sepc <= epc_cur;
+        scause <= 2;
+        stval <= 0;
       end
-    else if (l_access_fault & mstatus[3])
+    // else if (l_access_fault & sstatus[3])
+    else if (l_access_fault)
       begin
-        mepc <= epc_cur;
-        mcause <= 5;
-        mtval <= 0;
+        sepc <= epc_cur;
+        scause <= 5;
+        stval <= 0;
       end
-    else if (s_access_fault & mstatus[3])
+    // else if (s_access_fault & sstatus[3])
+    else if (s_access_fault)
       begin
-        mepc <= epc_cur;
-        mcause <= 7;
-        mtval <= 0;
+        sepc <= epc_cur;
+        scause <= 7;
+        stval <= 0;
       end
-    else if (ecall_m & mstatus[3])
+    // else if (ecall & sstatus[3])
+    else if (ecall)
       begin
-        mepc <= epc_cur;
-        mcause <= 11;
-        mtval <= 0;
+        sepc <= epc_cur;
+        scause <= 11;
+        stval <= 0;
       end
-    else if (mret)
+    else if (sret)
       begin
-        mepc <= 0;
-        mcause <= 0;
-        mtval <= 0;
+        sepc <= 0;
+        scause <= 0;
+        stval <= 0;
       end
     else
       begin
-        mepc <= 0;
-        mcause <= 0;
-        mtval <= 0;
+        sepc <= 0;
+        scause <= 0;
+        stval <= 0;
       end
 
     if (trap)
@@ -129,8 +137,8 @@ always @ *
       end
   end
 
-assign PC_redirect = mret ? mepc_o : mtvec;
-assign redirect_mux = mret | trap;
+assign PC_redirect = sret ? sepc_o : stvec;
+assign redirect_mux = sret | trap | ecall;  // In IF, control the PC used to fetch instruction
 assign reg_FD_flush = reg_FD_flush_;
 assign reg_DE_flush = reg_DE_flush_;
 assign reg_EM_flush = reg_EM_flush_;
