@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module REG64(
                     input clk,
 					input rst,

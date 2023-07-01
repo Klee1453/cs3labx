@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module MUX4T1_64(
     input [1:0]s,
     input [63:0]I0, I1, I2, I3,

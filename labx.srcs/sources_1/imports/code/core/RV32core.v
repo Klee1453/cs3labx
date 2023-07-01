@@ -1,15 +1,15 @@
 `timescale 1ns / 1ps
 
 module  RV32core(
-          input debug_en,  // debug enable
-          input debug_step,  // debug step clock
-          input [6:0] debug_addr,  // debug address
-          output[31:0] debug_data,  // debug data
-          output [7:0] sim_uart_char_out, // uart character
-          output sim_uart_char_valid, // control valid
-          input clk,  // main clock
-          input rst,  // synchronous reset
-          input interrupter  // interrupt source, for future use
+          input debug_en,                   // debug enable
+          input debug_step,                 // debug step clock
+          input[6:0]    debug_addr,         // debug address
+          output[31:0]  debug_data,         // debug data
+          output[7:0]   sim_uart_char_out,  // uart character
+          output sim_uart_char_valid,       // control valid
+          input clk,                        // main clock
+          input rst,                        // synchronous reset
+          input interrupter                 // interrupt source, for future use
         );
 
 wire debug_clk;
@@ -17,37 +17,43 @@ wire debug_clk;
 debug_clk clock(.clk(clk),.debug_en(debug_en),.debug_step(debug_step),.debug_clk(debug_clk));
 
 wire Branch_ctrl, JALR, RegWrite_ctrl, mem_w_ctrl, MIO_ctrl,
-     ALUSrc_A_ctrl, ALUSrc_B_ctrl, DatatoReg_ctrl, rs1use_ctrl, rs2use_ctrl;
+     ALUSrc_A_ctrl, ALUSrc_B_ctrl, DatatoReg_ctrl, rs1use_ctrl, rs2use_ctrl, csr_rw_ctrl, csr_w_imm_mux_ctrl, MRET;
 wire[1:0] hazard_optype_ctrl;
 wire[2:0] ImmSel_ctrl, cmp_ctrl;
-wire[3:0] ALUControl_ctrl;
+wire[2:0] exp_vector_ctrl;
+wire[4:0] ALUControl_ctrl;
 
 wire forward_ctrl_ls;
 wire[1:0] forward_ctrl_A, forward_ctrl_B;
 
 wire PC_EN_IF;
-wire [63:0] PC_IF, next_PC_IF, PC_4_IF;
+wire [63:0] PC_IF, next_PC_IF, PC_4_IF, final_PC_IF;
 wire [31:0] inst_IF;
 
 wire reg_FD_EN,reg_FD_stall,reg_FD_flush, cmp_res_ID;
 wire [63:0] jump_PC_ID, PC_ID, Debug_regs, rs1_data_reg, rs2_data_reg,
      Imm_out_ID, rs1_data_ID, rs2_data_ID, addA_ID;
 wire [31:0] inst_ID;
+wire isFlushed_ID;
 
 wire reg_DE_EN, reg_DE_flush, RegWrite_EXE, mem_w_EXE, MIO_EXE,
      ALUSrc_A_EXE, ALUSrc_B_EXE, ALUzero_EXE, ALUoverflow_EXE, DatatoReg_EXE;
 wire[2:0] u_b_h_w_EXE;
-wire[3:0] ALUControl_EXE;
+wire[4:0] ALUControl_EXE;
 wire[4:0] rs1_EXE, rs2_EXE, rd_EXE;
 wire[63:0] ALUout_EXE, PC_EXE, rs1_data_EXE, rs2_data_EXE, Imm_EXE,
     ALUA_EXE, ALUB_EXE, Dataout_EXE;
-wire [31:0] inst_EXE;
+wire[31:0] inst_EXE;
+wire isFlushed_EXE, csr_rw_EXE, csr_w_imm_mux_EXE, mret_EXE;
+wire[2:0] exp_vector_EXE;
 
 wire reg_EM_EN, reg_EM_flush, RegWrite_MEM, DatatoReg_MEM, mem_w_MEM, MIO_MEM;
 wire[2:0] u_b_h_w_MEM;
 wire[4:0] rd_MEM;
 wire[63:0] ALUout_MEM, PC_MEM, Dataout_MEM, Datain_MEM;
 wire[31:0] inst_MEM;
+wire isFlushed_MEM, csr_rw_MEM, csr_w_imm_mux_MEM, mret_MEM;
+wire[2:0] exp_vector_MEM;
 
 wire reg_MW_EN, RegWrite_WB, DatatoReg_WB;
 wire isFlushed_WB;          // added for exception unit
@@ -177,27 +183,27 @@ RAM_B data_ram(.addra(ALUout_MEM),.clka(debug_clk),.dina(Dataout_MEM),
                .wea(mem_w_MEM),.douta(Datain_MEM),.mem_u_b_h_w(u_b_h_w_MEM),
                .sim_uart_char_out(sim_uart_char_out),.sim_uart_char_valid(sim_uart_char_valid));
 
-ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
-    .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
-    .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(rs1_MEM),
-    .csr_r_data_out(CSRout_MEM),
+// ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
+//     .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
+//     .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(rs1_MEM),
+//     .csr_r_data_out(CSRout_MEM),
 
-    .interrupt(interrupter),
-    .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),
-    .sret(~isFlushed_WB & exp_vector_WB[4]),
-    .ecall(~isFlushed_WB & exp_vector_WB[3]),
-    .l_access_fault(~isFlushed_WB & exp_vector_WB[2]),
-    .s_access_fault(~isFlushed_WB & exp_vector_WB[1]),
-    .inst_access_fault(~isFlushed_WB & exp_vector_WB[0]),
-    .sret(sret_MEM),
+//     .interrupt(interrupter),
+//     .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),
+//     .sret(~isFlushed_WB & exp_vector_WB[4]),
+//     .ecall(~isFlushed_WB & exp_vector_WB[3]),
+//     .l_access_fault(~isFlushed_WB & exp_vector_WB[2]),
+//     .s_access_fault(~isFlushed_WB & exp_vector_WB[1]),
+//     .inst_access_fault(~isFlushed_WB & exp_vector_WB[0]),
+//     .sret(sret_MEM),
     
-    .epc_cur(PC_WB),
-    .epc_next(~isFlushed_MEM ? PC_MEM : ~isFlushed_EXE ? PC_EXE :
-    ~isFlushed_ID ? PC_ID : PC_IF),
-    .PC_redirect(PC_redirect_exp),.redirect_mux(redirect_mux_exp),
-    .reg_FD_flush(reg_FD_flush_exp),.reg_DE_flush(reg_DE_flush_exp),
-    .reg_EM_flush(reg_EM_flush_exp),.reg_MW_flush(reg_MW_flush_exp),
-    .RegWrite_cancel(RegWrite_cancel_exp));
+//     .epc_cur(PC_WB),
+//     .epc_next(~isFlushed_MEM ? PC_MEM : ~isFlushed_EXE ? PC_EXE :
+//     ~isFlushed_ID ? PC_ID : PC_IF),
+//     .PC_redirect(PC_redirect_exp),.redirect_mux(redirect_mux_exp),
+//     .reg_FD_flush(reg_FD_flush_exp),.reg_DE_flush(reg_DE_flush_exp),
+//     .reg_EM_flush(reg_EM_flush_exp),.reg_MW_flush(reg_MW_flush_exp),
+//     .RegWrite_cancel(RegWrite_cancel_exp));
 
 MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_MEM));
 
@@ -205,6 +211,7 @@ MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_ME
 REG_MEM_WB reg_MEM_WB(.clk(debug_clk),.rst(rst),.EN(reg_MW_EN),.flush(reg_MW_flush_exp | isFlushed_MEM),
                       .IR_MEM(inst_MEM),.PCurrent_MEM(PC_MEM),.ALUO_MEM(ALUout_MEM),.Datai(Datain_MEM),
                       .rd_MEM(rd_MEM),.DatatoReg_MEM(DatatoReg_MEM),.RegWrite_MEM(RegWrite_MEM),
+                      .exp_vector_MEM(exp_vector_MEM),
                       .PCurrent_WB(PC_WB),.IR_WB(inst_WB),.ALUO_WB(ALUout_WB),.MDR_WB(Datain_WB),
                       .rd_WB(rd_WB),.DatatoReg_WB(DatatoReg_WB),.RegWrite_WB(RegWrite_WB),
                       .isFlushed(isFlushed_WB),.exp_vector_WB(exp_vector_WB));

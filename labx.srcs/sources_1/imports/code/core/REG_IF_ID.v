@@ -10,7 +10,6 @@
 // Target Devices:
 // Tool versions:
 // Description:
-// Use GB2312 Encoding
 //
 // Dependencies:
 //
@@ -22,32 +21,37 @@
 
 module    REG_IF_ID(input clk,                                      //IF/ID Latch
                     input rst,
-                    input EN,                                       //Á÷Ë®¼Ä´æÆ÷Ê¹ÄÜ
-                    input Data_stall,                               //Êı¾İ¾ºÕùµÈ´ı
-                    input flush,                                    //¿ØÖÆ¾ºÕùÇå³ı²¢µÈ´ı
-                    input [63:0] PCOUT,                             //Ö¸Áî´æ´¢Æ÷Ö¸Õë
-                    input [31:0] IR,                                //Ö¸Áî´æ´¢Æ÷Êä³ö
+                    input EN,                                       //æµæ°´å¯„å­˜å™¨ä½¿èƒ½
+                    input Data_stall,                               //æ•°æ®ç«äº‰ç­‰å¾…
+                    input flush,                                    //æ§åˆ¶ç«äº‰æ¸…é™¤å¹¶ç­‰å¾…
+                    input [63:0] PCOUT,                             //æŒ‡ä»¤å­˜å‚¨å™¨æŒ‡é’ˆ
+                    input [31:0] IR,                                //æŒ‡ä»¤å­˜å‚¨å™¨è¾“å‡º
 
-                    output reg[31:0] IR_ID,                         //È¡Ö¸Ëø´æ
-                    output reg[63:0] PCurrent_ID                    //µ±Ç°´æÔÚÖ¸ÁîµØÖ·
+                    output reg[31:0] IR_ID,                         //å–æŒ‡é”å­˜
+                    output reg[63:0] PCurrent_ID,                   //å½“å‰å­˜åœ¨æŒ‡ä»¤åœ°å€
+                    output reg isFlushed                            //å½“å‰å‘¨æœŸIF_IDæ˜¯å¦æ”¶åˆ°flushä¿¡å·
                 );
 
-//reg[31:0]PCurrent_ID,IR_ID;
     always @(posedge clk or posedge rst) begin
         if(rst) begin
-             IR_ID <= 32'h00000000;                            //¸´Î»ÇåÁã
-             PCurrent_ID <= 64'h00000000;                     //¸´Î»ÇåÁã
+             IR_ID <= 32'h00000000;                          //å¤ä½æ¸…é›¶
+             PCurrent_ID <= 64'h00000000;                    //å¤ä½æ¸…é›¶
+             isFlushed <= 1'b0;                              //å¤ä½æ¸…é›¶
             end
         else if(EN)begin
-                if(Data_stall)begin
-                    IR_ID <= IR_ID;                          //IR waiting for Data Hazards ²¢ÔİÍ£È¡Ö¸
-                    PCurrent_ID <= PCurrent_ID;  end         //±£´æ¶ÔÓ¦PCÖ¸Õë
-                else if(flush)begin
-                        IR_ID <= 32'h00000013;              //IR waiting for Control Hazards iÇås³ıÖ¸Áî²¢ÔİÍ£
-                        PCurrent_ID <= PCurrent_ID;  end    //Çå³ıÖ¸ÁîµÄÖ¸Õë(²âÊÔ)
+                if (Data_stall) begin
+                    IR_ID <= IR_ID;                         //IR waiting for Data Hazards å¹¶æš‚åœå–æŒ‡
+                    PCurrent_ID <= PCurrent_ID;             //ä¿å­˜å¯¹åº”PCæŒ‡é’ˆ
+                end
+                else if(flush) begin
+                        IR_ID <= 32'h00000013;              //IR waiting for Control Hazards iæ¸…sé™¤æŒ‡ä»¤å¹¶æš‚åœ
+                        PCurrent_ID <= PCurrent_ID;         //æ¸…é™¤æŒ‡ä»¤çš„æŒ‡é’ˆ(æµ‹è¯•)
+                        isFlushed <= flush;
+                end
                 else begin
-                        IR_ID <= IR;                       //Õı³£È¡Ö¸,´«ËÍÏÂÒ»Á÷Ë®¼¶ÒëÂë
-                        PCurrent_ID <= PCOUT;  end         //µ±Ç°È¡Ö¸PCµØÖ·£¬Branch/JunpÖ¸Áî¼ÆËãÄ¿±êµØÖ·ÓÃ(·ÇPC+4)
+                        IR_ID <= IR;                        //æ­£å¸¸å–æŒ‡,ä¼ é€ä¸‹ä¸€æµæ°´çº§è¯‘ç 
+                        PCurrent_ID <= PCOUT;               //å½“å‰å–æŒ‡PCåœ°å€ï¼ŒBranch/JumpæŒ‡ä»¤è®¡ç®—ç›®æ ‡åœ°å€ç”¨(éPC+4)
+                end
             end
             else begin
                 IR_ID <= IR_ID;
