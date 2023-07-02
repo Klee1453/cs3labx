@@ -67,30 +67,30 @@ module    REG_ID_EX(input clk,                                          //ID/EX 
                 );
 
     always @(posedge clk or posedge rst) begin                           //ID/EX Latch
-    if(rst) begin
-        rd_EX               <= 0;
-        RegWrite_EX         <= 0;
-        WR_EX               <= 0;
-        IR_EX               <= 32'h00000000;
-        PCurrent_EX         <= 64'h00000000 ;
-        rs1_EX              <= 0;
-        rs2_EX              <= 0;
-        MIO_EX              <= 0;
-        isFlushed           <= 0;
-        csr_rw_EX           <= 0;
-        csr_w_imm_mux_EX    <= 0;
-        mret_EX             <= 0;
-        exp_vector_EX       <= 3'b000;
-    end
-    else if(EN) begin
-            if(flush) begin                              //数据冲突时冲刷流水线禁止改变CPU状�??
-                IR_EX       <= 32'h00000000;             //nop,废弃当前取脂 : 插入32'h00000013
+        if (rst) begin
+            rd_EX               <= 0;
+            RegWrite_EX         <= 0;
+            WR_EX               <= 0;
+            IR_EX               <= 32'h00000000;
+            PCurrent_EX         <= 64'h00000000 ;
+            rs1_EX              <= 0;
+            rs2_EX              <= 0;
+            MIO_EX              <= 0;
+            isFlushed           <= 0;
+            csr_rw_EX           <= 0;
+            csr_w_imm_mux_EX    <= 0;
+            mret_EX             <= 0;
+            exp_vector_EX       <= 3'b000;
+        end
+        else if (EN) begin
+            isFlushed <= flush;
+            if (flush) begin                             //数据冲突时冲刷流水线禁止改变CPU状�??
+                IR_EX       <= 32'h00000013;             //nop,废弃当前取脂 : 插入32'h00000013
                 rd_EX       <= 0;                        //cancel Instruction write address
                 RegWrite_EX <= 0;                        //寄存器写信号：禁止寄存器�?
                 WR_EX       <= 0;                        //cancel write memory
                 PCurrent_EX <= PCurrent_ID;              //传�?�PC(测试)
                 MIO_EX      <= 0;
-                isFlushed   <= 0;
             end
             else begin                                   //无数据冲突正常传输到EX�?
                 PCurrent_EX <= PCurrent_ID;              //传�?�当前指令地�?

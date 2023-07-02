@@ -66,6 +66,14 @@ wire taken, refetch, j;
 wire [7:0] pc_to_take;
 wire [63:0] next_pc_IF, next_pc_ID;
 
+wire [63:0]PC_redirect_exp = 64'h0;
+wire redirect_mux_exp = 0;
+wire reg_FD_flush_exp = 0;
+wire reg_DE_flush_exp = 0;
+wire reg_EM_flush_exp = 0;
+wire reg_MW_flush_exp = 0;
+wire RegWrite_cancel_exp = 0;
+
 // IF
 REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF),.D(final_PC_IF),.Q(PC_IF));
 
@@ -205,7 +213,7 @@ RAM_B data_ram(.addra(ALUout_MEM),.clka(debug_clk),.dina(Dataout_MEM),
 //     .reg_EM_flush(reg_EM_flush_exp),.reg_MW_flush(reg_MW_flush_exp),
 //     .RegWrite_cancel(RegWrite_cancel_exp));
 
-MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_MEM));
+// MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_MEM));
 
 // WB
 REG_MEM_WB reg_MEM_WB(.clk(debug_clk),.rst(rst),.EN(reg_MW_EN),.flush(reg_MW_flush_exp | isFlushed_MEM),

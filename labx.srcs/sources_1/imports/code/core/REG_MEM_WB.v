@@ -50,20 +50,16 @@ module   REG_MEM_WB(input clk,                                      //MEM/WB Lat
             isFlushed   <= 0;
             exp_vector_WB   <= 0;
         end
-        else if(EN) begin                                      //EX级正常传输到MEM级
-            if(flush) begin
-                isFlushed   <= 0;
-            end
-            else begin
-                IR_WB           <= IR_MEM;
-                PCurrent_WB     <= PCurrent_MEM;            ////MEM/WB.PC
-                ALUO_WB         <= ALUO_MEM;                //ALU操作结果写目的寄存器数据
-                MDR_WB          <= Datai;                   //存储器读出数据：写目的寄存器
-                rd_WB           <= rd_MEM;                  //写目的寄存器地址
-                RegWrite_WB     <= RegWrite_MEM;            //寄存器写信号
-                DatatoReg_WB    <= DatatoReg_MEM;           //REG写数据通道选择
-                exp_vector_WB   <= exp_vector_MEM;
-            end
+        else if (EN) begin                                  //EX级正常传输到MEM级
+            isFlushed       <= flush;
+            IR_WB           <= IR_MEM;
+            PCurrent_WB     <= PCurrent_MEM;                ////MEM/WB.PC
+            ALUO_WB         <= ALUO_MEM;                    //ALU操作结果写目的寄存器数据
+            MDR_WB          <= Datai;                       //存储器读出数据：写目的寄存器
+            rd_WB           <= rd_MEM;                      //写目的寄存器地址
+            RegWrite_WB     <= RegWrite_MEM;                //寄存器写信号
+            DatatoReg_WB    <= DatatoReg_MEM;               //REG写数据通道选择
+            exp_vector_WB   <= exp_vector_MEM;
         end
     end
 

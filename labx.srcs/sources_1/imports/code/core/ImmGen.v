@@ -24,9 +24,9 @@ module ImmGen(
     wire[63:0] Imm_U = {inst_field[31:12], 12'b0};
     // NOTE: zimm is generated in the Exception Unit (MEM), in order to decouple
 
-    assign Imm_out = {32{I}} & Imm_I |
-                     {32{B}} & Imm_B |
-                     {32{J}} & Imm_J |
-                     {32{S}} & Imm_S |
-                     {32{U}} & Imm_U ;
+    assign Imm_out = {64{I}} & Imm_I |
+                     {64{B}} & Imm_B |
+                     {64{J}} & Imm_J |
+                     {64{S}} & Imm_S |
+                     {64{U}} & Imm_U ;
 endmodule

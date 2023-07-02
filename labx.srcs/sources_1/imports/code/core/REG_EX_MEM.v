@@ -69,26 +69,22 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
             mret_MEM            <= 0;
             exp_vector_MEM      <= 3'b000;
         end
-        else if(EN) begin                                       //EX级正常传输到MEM�?
-            if(flush) begin
-                isFlushed       <= 0;
-            end
-            else begin
-                IR_MEM          <= IR_EX;
-                PCurrent_MEM    <= PCurrent_EX;                 //传�?�锁存当前指令地�?
-                ALUO_MEM        <= ALUO_EX;                     //锁存有效地址或ALU操作
-                Datao_MEM       <= B_EX;                        //传�?�锁存CPU输出数据
-                DatatoReg_MEM   <= DatatoReg_EX;                //传�?�锁存REG写数据�?�道选择
-                RegWrite_MEM    <= RegWrite_EX;                 //传�?�锁存目的寄存器写信�?
-                WR_MEM          <= WR_EX;                       //传�?�锁存存储器读写信号
-                rd_MEM          <= rd_EX;                       //传�?�锁存写目的寄存器地�?
-                u_b_h_w_MEM     <= u_b_h_w_EX;
-                MIO_MEM         <= MIO_EX;
-                csr_rw_MEM          <= csr_rw_EX;
-                csr_w_imm_mux_MEM   <= csr_w_imm_mux_EX;
-                mret_MEM            <= mret_EX;
-                exp_vector_MEM      <= exp_vector_EX;
-            end
+        else if (EN) begin                                      //EX级正常传输到MEM�?
+            isFlushed       <= flush;
+            IR_MEM          <= IR_EX;
+            PCurrent_MEM    <= PCurrent_EX;                     //传�?�锁存当前指令地�?
+            ALUO_MEM        <= ALUO_EX;                         //锁存有效地址或ALU操作
+            Datao_MEM       <= B_EX;                            //传�?�锁存CPU输出数据
+            DatatoReg_MEM   <= DatatoReg_EX;                    //传�?�锁存REG写数据�?�道选择
+            RegWrite_MEM    <= RegWrite_EX;                     //传�?�锁存目的寄存器写信�?
+            WR_MEM          <= WR_EX;                           //传�?�锁存存储器读写信号
+            rd_MEM          <= rd_EX;                           //传�?�锁存写目的寄存器地�?
+            u_b_h_w_MEM     <= u_b_h_w_EX;
+            MIO_MEM         <= MIO_EX;
+            csr_rw_MEM          <= csr_rw_EX;
+            csr_w_imm_mux_MEM   <= csr_w_imm_mux_EX;
+            mret_MEM            <= mret_EX;
+            exp_vector_MEM      <= exp_vector_EX;
         end
     end
 
