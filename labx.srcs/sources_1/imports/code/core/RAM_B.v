@@ -5,7 +5,7 @@ module RAM_B(
     input clka,      // normal clock
     input[31:0] dina,
     input wea, 
-    output[31:0] douta,
+    output[63:0] douta,
     output [7:0] sim_uart_char_out,
     output sim_uart_char_valid,
     input[2:0] mem_u_b_h_w
@@ -34,14 +34,15 @@ module RAM_B(
         end
     end
 
-    
-    assign douta = addra == SIM_UART_ADDR ? 32'b0 :
+    wire [31:0] douta_32;
+    assign douta_32 = addra == SIM_UART_ADDR ? 32'b0 :
         mem_u_b_h_w[1] ? {data[addra[ADDR_LINE-1:0] + 3], data[addra[ADDR_LINE-1:0] + 2],
                     data[addra[ADDR_LINE-1:0] + 1], data[addra[ADDR_LINE-1:0]]} :
         mem_u_b_h_w[0] ? {mem_u_b_h_w[2] ? 16'b0 : {16{data[addra[ADDR_LINE-1:0] + 1][7]}},
                     data[addra[ADDR_LINE-1:0] + 1], data[addra[ADDR_LINE-1:0]]} :
         {mem_u_b_h_w[2] ? 24'b0 : {24{data[addra[ADDR_LINE-1:0]][7]}}, data[addra[ADDR_LINE-1:0]]};
-    
+    assign douta = {{32{douta_32[31]}}, douta_32};
+
     reg uart_addr_valid;
     reg [7:0] uart_char;
     initial begin
