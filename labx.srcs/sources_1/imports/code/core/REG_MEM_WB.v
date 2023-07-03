@@ -29,7 +29,7 @@ module   REG_MEM_WB(input clk,                                      //MEM/WB Lat
                     input [4:0]  rd_MEM,                            //传递当前指令写目的寄存器地址
                     input DatatoReg_MEM,                            //传递当前指令REG写数据通道选择
                     input RegWrite_MEM,                             //传递当前指令寄存器写信号
-                    input [2:0]  exp_vector_MEM,                    //传递当前指令的异常类型向量
+                    input [5:0]  exp_vector_MEM,                    //传递当前指令的异常类型向量[illegal inst | SRET | ECALL | inst page fault | load page fault | store page fault]
                     output reg[63:0] PCurrent_WB,                   //锁存传递当前指令地址
                     output reg[31:0] IR_WB,                         //锁存传递当前指令(测试)
                     output reg[63:0] ALUO_WB,                       //锁存ALU操作结果：有效地址或ALU操作
@@ -38,7 +38,7 @@ module   REG_MEM_WB(input clk,                                      //MEM/WB Lat
                     output reg       DatatoReg_WB,                  //锁存传递当前指令REG写数据通道选择
                     output reg       RegWrite_WB,                   //锁存传递当前指令寄存器写信号
                     output reg isFlushed,                           //锁存当前MEM_WB寄存器被flush信号控制的状态
-                    output reg [2:0]exp_vector_WB                   //锁存异常类型向量
+                    output reg [5:0]exp_vector_WB                   //锁存异常类型向量
                 );
 
     always @(posedge clk or posedge rst) begin
@@ -48,7 +48,7 @@ module   REG_MEM_WB(input clk,                                      //MEM/WB Lat
             IR_WB       <= 0;
             PCurrent_WB <= 0;
             isFlushed   <= 0;
-            exp_vector_WB   <= 0;
+            exp_vector_WB   <= 6'b0;
         end
         else if (EN) begin                                  //EX级正常传输到MEM级
             isFlushed       <= flush;

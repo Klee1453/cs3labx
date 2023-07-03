@@ -8,8 +8,8 @@ module RAM_B(
     output[63:0] douta,
     output [7:0] sim_uart_char_out,
     output sim_uart_char_valid,
-    input[2:0] mem_u_b_h_w
-  //output l_access_fault, s_access_fault
+    input[2:0] mem_u_b_h_w,
+    output l_access_fault, s_access_fault
 );
     localparam SIZE = 256;
     //localparam ADDR_LINE = $clog2(SIZE);
@@ -58,6 +58,6 @@ module RAM_B(
         end
     end
 
-   // assign l_access_fault = 0;
-   // assign s_access_fault = 0;
+   assign l_access_fault = 0;
+   assign s_access_fault = 0;
 endmodule

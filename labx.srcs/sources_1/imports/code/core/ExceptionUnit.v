@@ -36,12 +36,12 @@ reg[1:0] csr_wsc;
 
 wire[63:0] sstatus;
 
-reg[31:0] sepc, scause, stval;
-wire[31:0] stvec, sepc_o;
+reg[63:0] sepc, scause, stval;
+wire[63:0] stvec, sepc_o;
 
-assign exception = illegal_inst | l_access_fault | s_access_fault | inst_access_fault | ecall;
-// assign trap = sstatus[3] & (interrupt | exception);
-assign trap = interrupt | exception;
+wire exception = illegal_inst | l_access_fault | s_access_fault | inst_access_fault | ecall;
+// wire trap = sstatus[3] & (interrupt | exception);
+wire trap = interrupt | exception;
 
 CSRRegs csr(.clk(clk),.rst(rst),.csr_w(csr_w),.raddr(csr_raddr),.waddr(csr_waddr),
             .wdata(csr_wdata),.rdata(csr_r_data_out),.sstatus(sstatus),.csr_wsc_mode(csr_wsc),
@@ -75,7 +75,7 @@ always @ *
     if (interrupt)
       begin
         sepc <= epc_next;
-        scause <= 32'h8000000B;  // Machine external interrupt
+        scause <= 64'h8000000B;  // Machine external interrupt
         stval <= 0;
       end
     // else if (illegal_inst & sstatus[3])

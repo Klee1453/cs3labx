@@ -26,6 +26,7 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
                     input [31:0] IR_EX,                             //当前执行指令(测试)
                     input [63:0] PCurrent_EX,                       //当前执行指令存储器指�?
                     input [63:0] ALUO_EX,                           //当前ALU执行输出：有效地�?或ALU操作
+                    input [63:0] A_EX,                              //ID段读出的rs1数据：在MEM段做csr写指令的时候会使用到
                     input [63:0] B_EX,                              //ID级读出寄存器B数据：CPU输出数据
                     input [4:0]  rd_EX,                             //传�?�当前指令写目的寄存器地�?
                     input DatatoReg_EX,                             //传�?�当前指令REG写数据�?�道选择
@@ -36,12 +37,13 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
                     input csr_rw_EX,                                //传�?�当前指令是否是csr读写指令
                     input csr_w_imm_mux_EX,                         //传�?�当前指令csr写选择信号
                     input mret_EX,                                  //不知道干什么的
-                    input [2:0] exp_vector_EX,                      //传�?�当前指令的异常类型向量
+                    input [3:0] exp_vector_EX,                      //传�?�当前指令的异常类型向量[illegal inst | SRET | ECALL | inst page fault]
 
                     output reg[63:0] PCurrent_MEM,                  //锁存传�?�当前指令地�?
                     output reg[31:0] IR_MEM,                        //锁存传�?�当前指�?(测试)
                     output reg[63:0] ALUO_MEM,                      //锁存ALU操作结果：有效地�?或ALU操作
                     output reg[63:0] Datao_MEM,                     //锁存传�?�当前指令输出MIO数据
+                    output reg[63:0] A_MEM,                         //锁存ID段读出的rs1数据
                     output reg[4:0]  rd_MEM,                        //锁存传�?�当前指令写目的寄存器地�?
                     output reg       DatatoReg_MEM,                 //锁存传�?�当前指令REG写数据�?�道选择
                     output reg       RegWrite_MEM,                  //锁存传�?�当前指令寄存器写信�?
@@ -52,7 +54,7 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
                     output reg       csr_rw_MEM,                    //锁存当前指令是否是csr读写指令
                     output reg       csr_w_imm_mux_MEM,             //所存当前指令csr写选择信号
                     output reg       mret_MEM,                      //目前还不知道干什么的
-                    output reg[2:0]  exp_vector_MEM                 //锁存当前指令的异常类型向量
+                    output reg[3:0]  exp_vector_MEM                 //锁存当前指令的异常类型向量
                 );
 
     always @(posedge clk or posedge rst) begin
@@ -67,7 +69,7 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
             csr_rw_MEM          <= 0;
             csr_w_imm_mux_MEM   <= 0;
             mret_MEM            <= 0;
-            exp_vector_MEM      <= 3'b000;
+            exp_vector_MEM      <= 4'b000;
         end
         else if (EN) begin                                      //EX级正常传输到MEM�?
             isFlushed       <= flush;
@@ -75,6 +77,7 @@ module   REG_EX_MEM(input clk,                                      //EX/MEM Lat
             PCurrent_MEM    <= PCurrent_EX;                     //传�?�锁存当前指令地�?
             ALUO_MEM        <= ALUO_EX;                         //锁存有效地址或ALU操作
             Datao_MEM       <= B_EX;                            //传�?�锁存CPU输出数据
+            A_MEM           <= A_EX;                            //
             DatatoReg_MEM   <= DatatoReg_EX;                    //传�?�锁存REG写数据�?�道选择
             RegWrite_MEM    <= RegWrite_EX;                     //传�?�锁存目的寄存器写信�?
             WR_MEM          <= WR_EX;                           //传�?�锁存存储器读写信号

@@ -29,12 +29,14 @@ wire[1:0] forward_ctrl_A, forward_ctrl_B;
 wire PC_EN_IF;
 wire [63:0] PC_IF, next_PC_IF, PC_4_IF, final_PC_IF;
 wire [31:0] inst_IF;
+wire inst_access_fault_IF = 0;
 
 wire reg_FD_EN,reg_FD_stall,reg_FD_flush, cmp_res_ID;
 wire [63:0] jump_PC_ID, PC_ID, Debug_regs, rs1_data_reg, rs2_data_reg,
      Imm_out_ID, rs1_data_ID, rs2_data_ID, addA_ID;
 wire [31:0] inst_ID;
 wire isFlushed_ID;
+wire inst_access_fault_ID;
 
 wire reg_DE_EN, reg_DE_flush, RegWrite_EXE, mem_w_EXE, MIO_EXE,
      ALUSrc_A_EXE, ALUSrc_B_EXE, ALUzero_EXE, ALUoverflow_EXE, DatatoReg_EXE;
@@ -45,19 +47,22 @@ wire[63:0] ALUout_EXE, PC_EXE, rs1_data_EXE, rs2_data_EXE, Imm_EXE,
     ALUA_EXE, ALUB_EXE, Dataout_EXE;
 wire[31:0] inst_EXE;
 wire isFlushed_EXE, csr_rw_EXE, csr_w_imm_mux_EXE, mret_EXE;
-wire[2:0] exp_vector_EXE;
+wire[3:0] exp_vector_EXE;
 
 wire reg_EM_EN, reg_EM_flush, RegWrite_MEM, DatatoReg_MEM, mem_w_MEM, MIO_MEM;
 wire[2:0] u_b_h_w_MEM;
 wire[4:0] rd_MEM;
-wire[63:0] ALUout_MEM, PC_MEM, Dataout_MEM, Datain_MEM;
+wire[63:0] ALUout_MEM, PC_MEM, Dataout_MEM, Datain_MEM, RAMout_MEM,  rs1_data_MEM;
 wire[31:0] inst_MEM;
 wire isFlushed_MEM, csr_rw_MEM, csr_w_imm_mux_MEM, mret_MEM;
-wire[2:0] exp_vector_MEM;
+wire[3:0] exp_vector_MEM;
+wire l_access_fault_MEM = 0;
+wire s_access_fault_MEM = 0;
+wire[63:0] CSRout_MEM;
 
 wire reg_MW_EN, RegWrite_WB, DatatoReg_WB;
 wire isFlushed_WB;          // added for exception unit
-wire[5:0] exp_vector_WB;    // added for exception unit, [5|4|3|2|1|0] => [illegal inst | SRET | ECALL | load page fault | store page fault | inst page fault]
+wire[5:0] exp_vector_WB;    // added for exception unit, [5|4|3|2|1|0] => [illegal inst | SRET | ECALL | inst page fault | load page fault | store page fault] = {{ctrl}, {inst}, {load/store}}
 wire[4:0] rd_WB;
 wire [63:0] wt_data_WB, PC_WB, ALUout_WB, Datain_WB;
 wire [31:0] inst_WB;
@@ -66,13 +71,13 @@ wire taken, refetch, j;
 wire [7:0] pc_to_take;
 wire [63:0] next_pc_IF, next_pc_ID;
 
-wire [63:0]PC_redirect_exp = 64'h0;
-wire redirect_mux_exp = 0;
-wire reg_FD_flush_exp = 0;
-wire reg_DE_flush_exp = 0;
-wire reg_EM_flush_exp = 0;
-wire reg_MW_flush_exp = 0;
-wire RegWrite_cancel_exp = 0;
+wire [63:0]PC_redirect_exp;
+wire redirect_mux_exp;
+wire reg_FD_flush_exp;
+wire reg_DE_flush_exp;
+wire reg_EM_flush_exp;
+wire reg_MW_flush_exp;
+wire RegWrite_cancel_exp;
 
 // IF
 REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF),.D(final_PC_IF),.Q(PC_IF));
@@ -105,14 +110,18 @@ Branch_Prediction branch_prediction(
 // ID
 REG_IF_ID reg_IF_ID(.clk(debug_clk),.rst(rst),.EN(reg_FD_EN),.Data_stall(reg_FD_stall),
                     .flush(reg_FD_flush | reg_FD_flush_exp),.PCOUT(PC_IF),.IR(inst_IF),
+                    .inst_access_fault(inst_access_fault_IF),
 
-                    .IR_ID(inst_ID),.PCurrent_ID(PC_ID),.isFlushed(isFlushed_ID));
+                    .IR_ID(inst_ID),.PCurrent_ID(PC_ID),.isFlushed(isFlushed_ID),
+                    .inst_access_fault_ID(inst_access_fault_ID));
 
 CtrlUnit ctrl(.inst(inst_ID),.cmp_res(cmp_res_ID),.Branch(Branch_ctrl),.ALUSrc_A(ALUSrc_A_ctrl),
               .ALUSrc_B(ALUSrc_B_ctrl),.DatatoReg(DatatoReg_ctrl),.RegWrite(RegWrite_ctrl),
               .mem_w(mem_w_ctrl),.MIO(MIO_ctrl),.rs1use(rs1use_ctrl),.rs2use(rs2use_ctrl),
               .hazard_optype(hazard_optype_ctrl),.ImmSel(ImmSel_ctrl),.cmp_ctrl(cmp_ctrl),
-              .ALUControl(ALUControl_ctrl),.JALR(JALR),.J(j));
+              .ALUControl(ALUControl_ctrl),
+              .exp_vector_ctrl(exp_vector_ctrl), .csr_rw(csr_rw_ctrl), .csr_w_imm_mux(csr_w_imm_mux_ctrl),
+              .JALR(JALR),.J(j));
 
 Regs register(.clk(debug_clk),.rst(rst),.L_S(RegWrite_WB & ~RegWrite_cancel_exp),
               .R_addr_A(inst_ID[19:15]),.R_addr_B(inst_ID[24:20]),
@@ -153,7 +162,7 @@ REG_ID_EX reg_ID_EX(.clk(debug_clk),.rst(rst),.EN(reg_DE_EN),
                     .ALUSrc_A(ALUSrc_A_ctrl),.ALUSrc_B(ALUSrc_B_ctrl),.ALUC(ALUControl_ctrl),.DatatoReg(DatatoReg_ctrl),
                     .RegWrite(RegWrite_ctrl),.WR(mem_w_ctrl),.u_b_h_w(inst_ID[14:12]),.MIO(MIO_ctrl),
                     .csr_rw(csr_rw_ctrl),.csr_w_imm_mux(csr_w_imm_mux_ctrl),.mret(MRET),
-                    .exp_vector(exp_vector_ctrl),
+                    .exp_vector({exp_vector_ctrl, inst_access_fault_ID}),
 
                     .PCurrent_EX(PC_EXE),.IR_EX(inst_EXE),.rs1_EX(rs1_EXE),.rs2_EX(rs2_EXE),
                     .A_EX(rs1_data_EXE),.B_EX(rs2_data_EXE),.Imm32_EX(Imm_EXE),.rd_EX(rd_EXE),
@@ -176,50 +185,50 @@ MUX2T1_64 mux_forward_EXE(.I0(rs2_data_EXE),.I1(Datain_MEM),.s(forward_ctrl_ls),
 
 // MEM
 REG_EX_MEM reg_EXE_MEM(.clk(debug_clk),.rst(rst),.EN(reg_EM_EN),.flush(reg_EM_flush_exp | isFlushed_EXE),
-                       .IR_EX(inst_EXE),.PCurrent_EX(PC_EXE),.ALUO_EX(ALUout_EXE),.B_EX(Dataout_EXE),
+                       .IR_EX(inst_EXE),.PCurrent_EX(PC_EXE),.ALUO_EX(ALUout_EXE),.B_EX(Dataout_EXE),.A_EX(rs1_data_EXE),
                        .rd_EX(rd_EXE),.DatatoReg_EX(DatatoReg_EXE),
                        .RegWrite_EX(RegWrite_EXE),.WR_EX(mem_w_EXE),.u_b_h_w_EX(u_b_h_w_EXE),.MIO_EX(MIO_EXE),
                        .csr_rw_EX(csr_rw_EXE),.csr_w_imm_mux_EX(csr_w_imm_mux_EXE),.mret_EX(mret_EXE),
                        .exp_vector_EX(exp_vector_EXE),
-                       .PCurrent_MEM(PC_MEM),.IR_MEM(inst_MEM),.ALUO_MEM(ALUout_MEM),.Datao_MEM(Dataout_MEM),
+                       .PCurrent_MEM(PC_MEM),.IR_MEM(inst_MEM),.ALUO_MEM(ALUout_MEM),.Datao_MEM(Dataout_MEM),.A_MEM(rs1_data_MEM),
                        .rd_MEM(rd_MEM),.DatatoReg_MEM(DatatoReg_MEM),
                        .RegWrite_MEM(RegWrite_MEM),.WR_MEM(mem_w_MEM),.u_b_h_w_MEM(u_b_h_w_MEM),.MIO_MEM(MIO_MEM),
                        .isFlushed(isFlushed_MEM),.csr_rw_MEM(csr_rw_MEM),.csr_w_imm_mux_MEM(csr_w_imm_mux_MEM),
                        .mret_MEM(mret_MEM),.exp_vector_MEM(exp_vector_MEM));
 
 RAM_B data_ram(.addra(ALUout_MEM),.clka(debug_clk),.dina(Dataout_MEM),
-               .wea(mem_w_MEM),.douta(Datain_MEM),.mem_u_b_h_w(u_b_h_w_MEM),
-               .sim_uart_char_out(sim_uart_char_out),.sim_uart_char_valid(sim_uart_char_valid));
+               .wea(mem_w_MEM),.douta(RAMout_MEM),.mem_u_b_h_w(u_b_h_w_MEM),
+               .sim_uart_char_out(sim_uart_char_out),.sim_uart_char_valid(sim_uart_char_valid),
+               .l_access_fault(l_access_fault_MEM), .s_access_fault(s_access_fault_MEM));
 
-// ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
-//     .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
-//     .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(rs1_MEM),
-//     .csr_r_data_out(CSRout_MEM),
+ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
+    .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
+    .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(inst_MEM[24:20]),
+    .csr_r_data_out(CSRout_MEM),
 
-//     .interrupt(interrupter),
-//     .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),
-//     .sret(~isFlushed_WB & exp_vector_WB[4]),
-//     .ecall(~isFlushed_WB & exp_vector_WB[3]),
-//     .l_access_fault(~isFlushed_WB & exp_vector_WB[2]),
-//     .s_access_fault(~isFlushed_WB & exp_vector_WB[1]),
-//     .inst_access_fault(~isFlushed_WB & exp_vector_WB[0]),
-//     .sret(sret_MEM),
+    .interrupt(interrupter),
+    .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),
+    .sret(~isFlushed_WB & exp_vector_WB[4]),
+    .ecall(~isFlushed_WB & exp_vector_WB[3]),
+    .l_access_fault(~isFlushed_WB & exp_vector_WB[1]),
+    .s_access_fault(~isFlushed_WB & exp_vector_WB[0]),
+    .inst_access_fault(~isFlushed_WB & exp_vector_WB[2]),
     
-//     .epc_cur(PC_WB),
-//     .epc_next(~isFlushed_MEM ? PC_MEM : ~isFlushed_EXE ? PC_EXE :
-//     ~isFlushed_ID ? PC_ID : PC_IF),
-//     .PC_redirect(PC_redirect_exp),.redirect_mux(redirect_mux_exp),
-//     .reg_FD_flush(reg_FD_flush_exp),.reg_DE_flush(reg_DE_flush_exp),
-//     .reg_EM_flush(reg_EM_flush_exp),.reg_MW_flush(reg_MW_flush_exp),
-//     .RegWrite_cancel(RegWrite_cancel_exp));
+    .epc_cur(PC_WB),
+    .epc_next(~isFlushed_MEM ? PC_MEM : ~isFlushed_EXE ? PC_EXE :
+    ~isFlushed_ID ? PC_ID : PC_IF),
+    .PC_redirect(PC_redirect_exp),.redirect_mux(redirect_mux_exp),
+    .reg_FD_flush(reg_FD_flush_exp),.reg_DE_flush(reg_DE_flush_exp),
+    .reg_EM_flush(reg_EM_flush_exp),.reg_MW_flush(reg_MW_flush_exp),
+    .RegWrite_cancel(RegWrite_cancel_exp));
 
-// MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_MEM));
+MUX2T1_64 mux_csrout(.I0(RAMout_MEM),.I1(CSRout_MEM),.s(csr_rw_MEM),.o(Datain_MEM));
 
 // WB
 REG_MEM_WB reg_MEM_WB(.clk(debug_clk),.rst(rst),.EN(reg_MW_EN),.flush(reg_MW_flush_exp | isFlushed_MEM),
                       .IR_MEM(inst_MEM),.PCurrent_MEM(PC_MEM),.ALUO_MEM(ALUout_MEM),.Datai(Datain_MEM),
                       .rd_MEM(rd_MEM),.DatatoReg_MEM(DatatoReg_MEM),.RegWrite_MEM(RegWrite_MEM),
-                      .exp_vector_MEM(exp_vector_MEM),
+                      .exp_vector_MEM({exp_vector_MEM, l_access_fault_MEM, s_access_fault_MEM}),
                       .PCurrent_WB(PC_WB),.IR_WB(inst_WB),.ALUO_WB(ALUout_WB),.MDR_WB(Datain_WB),
                       .rd_WB(rd_WB),.DatatoReg_WB(DatatoReg_WB),.RegWrite_WB(RegWrite_WB),
                       .isFlushed(isFlushed_WB),.exp_vector_WB(exp_vector_WB));
