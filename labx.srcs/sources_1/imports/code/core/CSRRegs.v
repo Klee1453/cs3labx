@@ -7,7 +7,7 @@ module CSRRegs(
         input csr_w,                // CSR write enable
         input[1:0] csr_wsc_mode,    // csrrw(i), csrrs(i), csrrc(i) funct3[1:0]
         output[63:0] rdata,         // CSR read value
-        output[31:0] sstatus,       // read value of sstatus
+        output[63:0] sstatus,       // read value of sstatus
 
         input is_trap,              // is interrupt or exception (and SIE is 1, todo)
         input is_sret,
