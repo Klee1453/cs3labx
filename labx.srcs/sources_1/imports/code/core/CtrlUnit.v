@@ -184,7 +184,7 @@ assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC}} & ALU_ADD  |
                     {5{SRA  | SRAI}}                            & ALU_SRA  |
                     {5{JAL  | JALR}}                            & ALU_Ap4  |
                     {5{LUI}}                                    & ALU_Bout |
-                    {5{ADDW}}                                   & ALU_ADDW |
+                    {5{ADDW | ADDIW}}                           & ALU_ADDW |
                     {5{SUBW}}                                   & ALU_SUBW |
                     {5{SLLW | SLLIW}}                           & ALU_SLLW |
                     {5{SRLW | SRLIW}}                           & ALU_SRLW |
