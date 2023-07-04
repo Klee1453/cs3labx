@@ -122,6 +122,7 @@ wire S_valid  = SD | SW | SH | SB;
 
 assign Branch = cmp_res | JAL | JALR | ECALL | SRET;  // to fill sth. in
 
+// CSR指令的ImmSel = 0 ALU中使用的ALU_b = 0
 parameter Imm_type_I = 3'b001;
 parameter Imm_type_B = 3'b010;
 parameter Imm_type_J = 3'b011;
@@ -148,7 +149,7 @@ assign cmp_ctrl = {3{Bop}} &
         ({3{BLTU}} & cmp_LTU) |
         ({3{BGEU}} & cmp_GEU));  // to fill sth. in
 
-assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | JALR; // to fill sth. in
+assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | JALR  | CSRRC | CSRRS | CSRRW; // to fill sth. in
                                                                                                 // 1 -> ALU_inputA = rs1_EXE, 0 -> ALU_inputA = PC_EXE
 
 assign ALUSrc_B = ~(R_valid | Rw_valid | B_valid);  // to fill sth. in
@@ -172,7 +173,7 @@ parameter ALU_SLLW = 5'b10110;
 parameter ALU_SRLW = 5'b10111;
 parameter ALU_SRAW = 5'b11010;
 
-assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC}} & ALU_ADD  |
+assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC | CSRRC | CSRRS | CSRRW}}    & ALU_ADD  |
                     {5{SUB}}                                    & ALU_SUB  |
                     {5{AND  | ANDI}}                            & ALU_AND  |
                     {5{OR   | ORI}}                             & ALU_OR   |
@@ -189,11 +190,16 @@ assign ALUControl = {5{ADD | ADDI | L_valid | S_valid | AUIPC}} & ALU_ADD  |
                     {5{SLLW | SLLIW}}                           & ALU_SLLW |
                     {5{SRLW | SRLIW}}                           & ALU_SRLW |
                     {5{SRAW | SRAIW}}                           & ALU_SRAW ;
-// NOTE: CSR write-after-read is implemented in the Exception Unit (MEM) rather than ALU (EX), in order to decouple
+// NOTE: CSR write-after-read is implemented in the Exception Unit (MEM) rather than ALU (EX), but the ALU should act as ADD 
 
-assign DatatoReg = L_valid;
 
-assign RegWrite = R_valid | Rw_valid | I_valid | Iw_valid | JAL | JALR | L_valid | LUI | AUIPC;
+assign csr_rw = CSRRW | CSRRS | CSRRC | CSRRWI | CSRRSI | CSRRCI;
+
+assign csr_w_imm_mux = CSRRWI | CSRRSI | CSRRCI;
+
+assign DatatoReg = L_valid | csr_rw;                       //在MEM阶段，最终传递给WB阶段的Datain_MEM由内存读取值和CSR读取值经过选择信号合并而来，CSR读取的指令也可以视作是load指令
+
+assign RegWrite = R_valid | Rw_valid | I_valid | Iw_valid | JAL | JALR | L_valid | LUI | AUIPC | csr_rw | ECALL;
 
 assign mem_w = S_valid;
 
@@ -208,9 +214,5 @@ assign rs2use = R_valid | Rw_valid | B_valid | S_valid;  // to fill sth. in
 assign J = JAL | JALR | B_valid | ECALL | SRET;
 
 assign exp_vector_ctrl = {illegal_inst, SRET, ECALL};
-
-assign csr_rw = CSRRW | CSRRS | CSRRC | CSRRWI | CSRRSI | CSRRCI;
-
-assign csr_w_imm_mux = CSRRWI | CSRRSI | CSRRCI;
 
 endmodule

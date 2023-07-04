@@ -19,6 +19,7 @@ module CSRRegs(
        );
 
 reg[63:0] CSR [0:7];
+reg[63:0] CSR_old [0:7];
 
 // The standard RISC-V ISA sets aside a 12-bit encoding space (csr[11:0]) for CSRs.
 // In order to run our system, the following Supervisor-level CSRs need to be implemented:
@@ -67,14 +68,20 @@ assign sstatus = CSR[0];
 assign stvec = CSR[1];
 assign sepc_o = CSR[3];
 
-reg [63:0]CSR_before_write;
-assign rdata = CSR_before_write;        // CSRR[W/S/C](i) should read the ORIGINAL CSR value, not the modified one
-
-always@(posedge clk or posedge rst) begin
-    CSR_before_write <= CSR[raddr_map]; // HIDEEN DANGER: timing
+always@(posedge clk) begin              // 在每个时钟周期开始时，备份所有CSR寄存器作为旧值
+    CSR_old[0] <= CSR[0];
+    CSR_old[1] <= CSR[1];
+    CSR_old[2] <= CSR[2];
+    CSR_old[3] <= CSR[3];
+    CSR_old[4] <= CSR[4];
+    CSR_old[5] <= CSR[5];
+    CSR_old[6] <= CSR[6];
+    CSR_old[7] <= CSR[7];
 end
 
-always@(posedge clk or posedge rst)
+assign rdata = CSR_old[waddr_map];      // CSRR[W/S/C](i) should read the ORIGINAL CSR value, not the modified one
+
+always@(negedge clk or posedge rst)
   begin
     if (rst)
       begin
