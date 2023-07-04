@@ -63,10 +63,10 @@ wire waddr_valid = (waddr_map != 3'h7);
 // When a trap is taken, SPP is set to 0 if the trap originated from user mode, or 1 otherwise. 
 // When an SRET instruction is executed to return from the trap handler, 
 // the privilege level is set to user mode if the SPP bit is 0, or supervisor mode if the SPP bit is 1; SPP is then set to 0.
-assign sstatus = CSR[0];
+assign sstatus = CSR_old[0];
 
-assign stvec = CSR[1];
-assign sepc_o = CSR[3];
+assign stvec = CSR_old[1];
+assign sepc_o = CSR_old[3];
 
 always@(posedge clk) begin              // 在每个时钟周期开始时，备份所有CSR寄存器作为旧值
     CSR_old[0] <= CSR[0];

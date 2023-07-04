@@ -127,6 +127,14 @@ always @ *
         reg_MW_flush_ = 1;
         RegWrite_cancel_ = 1;
       end
+    else if (sret) 
+      begin
+        reg_FD_flush_ = 1;
+        reg_DE_flush_ = 1;
+        reg_EM_flush_ = 1;
+        reg_MW_flush_ = 1;
+        RegWrite_cancel_ = 1;
+      end
     else
       begin
         reg_FD_flush_ = 0;
@@ -137,7 +145,7 @@ always @ *
       end
   end
 
-assign PC_redirect = sret ? sepc_o : stvec;
+assign PC_redirect = sret ? (sepc_o + 64'd4) : stvec;
 assign redirect_mux = sret | trap | ecall;  // In IF, control the PC used to fetch instruction
 assign reg_FD_flush = reg_FD_flush_;
 assign reg_DE_flush = reg_DE_flush_;

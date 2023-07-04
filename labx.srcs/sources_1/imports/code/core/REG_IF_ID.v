@@ -47,14 +47,14 @@ module    REG_IF_ID(input clk,                                      //IF/ID Latc
                 IR_ID <= IR_ID;                         //IR waiting for Data Hazards 并暂停取指
                 PCurrent_ID <= PCurrent_ID;             //保存对应PC指针
             end
-            else if(flush) begin
+            else if (flush) begin
                 IR_ID <= 32'h00000013;                  //IR waiting for Control Hazards i清s除指令并暂停
-                PCurrent_ID <= PCurrent_ID;             //清除指令的指针(测试)
+                PCurrent_ID <= PCurrent_ID;             //清除指令的指针(测试)         
             end
             else begin
-                    IR_ID <= IR;                        //正常取指,传送下一流水级译码
-                    PCurrent_ID <= PCOUT;               //当前取指PC地址，Branch/Jump指令计算目标地址用(非PC+4)
-                    inst_access_fault_ID <= inst_access_fault;
+                IR_ID <= IR;                        //正常取指,传送下一流水级译码
+                PCurrent_ID <= PCOUT;               //当前取指PC地址，Branch/Jump指令计算目标地址用(非PC+4)
+                inst_access_fault_ID <= inst_access_fault;
             end
         end
         else begin
