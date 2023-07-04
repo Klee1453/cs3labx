@@ -22,8 +22,8 @@ module ImmGen(
     wire[63:0] Imm_J = {{44{inst_field[31]}}, inst_field[19:12], inst_field[20], inst_field[30:21],1'b0};
     wire[63:0] Imm_S = {{52{inst_field[31]}}, inst_field[31:25], inst_field[11:7]};
     wire[63:0] Imm_U = {inst_field[31:12], 12'b0};
-    // NOTE: zimm is generated in the Exception Unit (MEM), in order to decouple
-
+    // NOTE: zimm is generated in the Exception Unit (MEM)
+    // But some CSR instr need to use ALU to do res = rs1_EXE + 0
     assign Imm_out = {64{I}} & Imm_I |
                      {64{B}} & Imm_B |
                      {64{J}} & Imm_J |

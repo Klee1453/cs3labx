@@ -75,9 +75,9 @@ module Branch_Prediction(
                                         // 注意, 这个判定方法对某些会改变指令本身的程序是无效的
     wire [4:0]PC_IF_hash = PC_Branch[4:0];
 
-//    被taken的缓冲代替
-//    reg [1:0]predictBit_buffer;     // 预测位的缓冲区, 用于生成上一周期的predictBit
-//    reg [1:0]prev_predictBit;       // 上一周期的predictBit
+//  被taken的缓冲代替
+//  reg [1:0]predictBit_buffer; // 预测位的缓冲区, 用于生成上一周期的predictBit
+//  reg [1:0]prev_predictBit;   // 上一周期的predictBit
     reg prev_taken;             // 缓冲taken信号
     reg [7:0]PC_IF_buffer;      // PC_IF_hash缓冲区, 用于生成上一周期PC_IF值
     reg [7:0]prev_PC_IF;        // 上一周期PC_IF_hash值
@@ -88,7 +88,7 @@ module Branch_Prediction(
     
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
-//            prev_predictBit <= 2'b0;
+//          prev_predictBit <= 2'b0;
             PC_IF_buffer <= 8'b0;
             prev_PC_IF <= 8'b0;
             prev_taken <= 1'b0;
@@ -98,7 +98,7 @@ module Branch_Prediction(
         else begin
             prev_refetch <= refetch;                // 在一切开始之前, 缓存还没有被改变过的(上个时钟周期最后时刻的)refetch信号
             prev_taken <= taken;                    // 在一切开始之前， 缓存还没有被改变过的(上个时钟周期最后时刻的)taken
-//            prev_predictBit <= predictBit_buffer;   // 生成上一周期的predictBit
+//          prev_predictBit <= predictBit_buffer;   // 生成上一周期的predictBit
             prev_PC_IF <= PC_IF_buffer;         // 生成上一周期的PC_IF用于更新表
             prev_PC_to_take <= PC_to_take;      // 上一周期的PC_to_take用于生成refetch
         end

@@ -42,7 +42,7 @@ module    REG_ID_EX(input clk,                                          //ID/EX 
                     input csr_rw,                                       //当前译码指令是否是csr读写指令
                     input csr_w_imm_mux,                                //用于选择向csr写入的是zimm还是寄存器值
                     input mret,                                         //目前还不知道是什么
-                    input [2:0]exp_vector,                              //用于判断中断类型的向量，自高位到低位： [illegal_inst | sret | ecall]
+                    input [3:0]exp_vector,                              //用于判断中断类型[illegal inst | SRET | ECALL | inst page fault]
                     output reg[63:0] PCurrent_EX,                       //锁存当前译码指令地址
                     output reg[31:0] IR_EX,                             //锁存当前译码指令(测试)
                     output reg[4:0]  rs1_EX,
@@ -63,7 +63,7 @@ module    REG_ID_EX(input clk,                                          //ID/EX 
                     output reg       csr_rw_EX,                         //锁存当前译码指令是否是csr读写指令
                     output reg       csr_w_imm_mux_EX,                  //锁存当前译码指令是否是csr读写指令向csr写入值的选择控制
                     output reg       mret_EX,                           //锁存mret，目前还不知道干什么
-                    output reg[2:0]  exp_vector_EX                      //所存当前译码指令的中断类型向量
+                    output reg[3:0]  exp_vector_EX                      //所存当前译码指令的中断类型向量
                 );
 
     always @(posedge clk or posedge rst) begin                           //ID/EX Latch
@@ -80,7 +80,7 @@ module    REG_ID_EX(input clk,                                          //ID/EX 
             csr_rw_EX           <= 0;
             csr_w_imm_mux_EX    <= 0;
             mret_EX             <= 0;
-            exp_vector_EX       <= 3'b000;
+            exp_vector_EX       <= 4'b000;
         end
         else if (EN) begin
             isFlushed <= flush;
