@@ -110,6 +110,7 @@ Branch_Prediction branch_prediction(
         .J(j),
         .Branch_ID(Branch_ctrl),
         .PC_to_branch(jump_PC_ID),
+        .load_use_hazzard(reg_FD_stall),
         .refetch(refetch)
        );
 

@@ -51,6 +51,10 @@ module MMU(
 
     reg[7:0] data[0:SIZE-1];                                //the real data stored in Ram
 
+    initial	begin
+        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel2.hex_output.hex", data);
+    end
+
     wire [63:0]addr_pa,m_final_pa,p_final_pa;
     wire m_final_page_fault,p_final_page_fault;
     wire [56:0]pgtbl2;
@@ -132,7 +136,7 @@ module MMU(
     integer i;
     always @ (posedge new_clk or posedge rst) begin
         if(rst) begin
-            for (i = 0; i<17'h10000; i = i + 1) data[i] <= 0;
+            for (i = 17'd8713; i<17'h10000; i = i + 1) data[i] <= 0;
         end        
         else begin
             if (wea & (addr_pa != SIM_UART_ADDR)) begin
@@ -179,7 +183,7 @@ module MMU(
     assign sim_uart_char_valid = uart_addr_valid;
     assign sim_uart_char_out   = uart_char;
     always @(posedge clka) begin
-        uart_addr_valid <= wea & (addr_pa == SIM_UART_ADDR);
+        uart_addr_valid <= wea & (addr_pa == SIM_UART_ADDR | addra == SIM_UART_ADDR);
         uart_char <= dina[7:0];
         if (sim_uart_char_valid) begin
             $write("%c", sim_uart_char_out);

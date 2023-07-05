@@ -42,14 +42,15 @@ module Branch_Prediction(
     input clk,
     input rst,
     
-    input [63:0]PC_Branch,      /* 实际上是当前PC */
+    input [63:0]PC_Branch,       /* 实际上是当前PC */
     input [6:0]opcode_IF,       /* IF段的(当前PC对应的)指令的opcode 如果opcode不是跳转指令 则不进行预测 不修改BHT BTB */
     output taken,               /* 数据流向mux_IF_predict作为选择信号 */
-    output [63:0]PC_to_take,    /* IF段预测跳转的地址, 数据流向mux_IF_predict作为跳转后得到next_pc_IF */
+    output [63:0]PC_to_take,     /* IF段预测跳转的地址, 数据流向mux_IF_predict作为跳转后得到next_pc_IF */
     
     input J,                    /* ID段指令是否为跳转指令 */   
     input Branch_ID,            /* ID段判断ID段指令是否跳转 */
-    input [63:0]PC_to_branch,   /* ID段判断的跳转PC */
+    input [63:0]PC_to_branch,    /* ID段判断的跳转PC */
+    input load_use_hazzard,     /* 是否是 load, b-type紧邻的情况 */
     output refetch              /* 数据流向HazzardDectectionUnit以及mux_IF, 重新取指 */
     );
 
@@ -71,7 +72,7 @@ module Branch_Prediction(
      // 因此对BHT/BTB的更新位于下一时钟周期(的一半位置处, 这样能尽可能减少taken信号生成到更新表的时间差)
     reg [1:0]BHT_predictBit [31:0];
     reg [63:0]BTB_predictedPC [31:0];
-    reg [63:0]BTB_PCindex [31:0];       // 生成预测信息之前, 比对BTB中的跳转地址对应PC是否与目前PC一致
+    reg [63:0]BTB_PCindex [31:0];        // 生成预测信息之前, 比对BTB中的跳转地址对应PC是否与目前PC一致
                                         // 注意, 这个判定方法对某些会改变指令本身的程序是无效的
     wire [4:0]PC_IF_hash = PC_Branch[6:2];
 
@@ -79,28 +80,36 @@ module Branch_Prediction(
 //  reg [1:0]predictBit_buffer; // 预测位的缓冲区, 用于生成上一周期的predictBit
 //  reg [1:0]prev_predictBit;   // 上一周期的predictBit
     reg prev_taken;             // 缓冲taken信号
-    reg [63:0]PC_IF_buffer;      // PC_IF_hash缓冲区, 用于生成上一周期PC_IF值
+    reg [63:0]PC_IF_buffer;      // PC_IF缓冲区, 用于生成上一周期PC_IF值
     reg [63:0]prev_PC_IF;        // 上一周期PC_IF_hash值
     reg prev_refetch;           // 缓冲refetch信号
-    wire [4:0]prev_PC_hash = prev_PC_IF[4:0];
+    wire [4:0]prev_PC_hash = prev_PC_IF[6:2];
     
     reg [63:0]prev_PC_to_take;
+
+    reg prev_load_use_hazzard, curr_load_use_hazzard;
     
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
-//          prev_predictBit <= 0;
-            PC_IF_buffer <= 0;
-            prev_PC_IF <= 0;
-            prev_taken <= 0;
-            prev_refetch <= 0;
-            prev_PC_to_take <= 0;
+//          prev_predictBit <= 2'b0;
+            PC_IF_buffer <= 64'b0;
+            prev_PC_IF <= 64'b0;
+            prev_taken <= 1'b0;
+            prev_refetch <= 1'b0;
+            prev_PC_to_take <= 64'b0;
+            prev_load_use_hazzard <= 1'b0;
+            curr_load_use_hazzard <= 1'b0;
         end
         else begin
-            prev_refetch <= refetch;                // 在一切开始之前, 缓存还没有被改变过的(上个时钟周期最后时刻的)refetch信号
-            prev_taken <= taken;                    // 在一切开始之前， 缓存还没有被改变过的(上个时钟周期最后时刻的)taken
-//          prev_predictBit <= predictBit_buffer;   // 生成上一周期的predictBit
-            prev_PC_IF <= PC_IF_buffer;         // 生成上一周期的PC_IF用于更新表
-            prev_PC_to_take <= PC_to_take;      // 上一周期的PC_to_take用于生成refetch
+            prev_load_use_hazzard <= curr_load_use_hazzard; // 将上一周期的load_use_hazzard存储
+            curr_load_use_hazzard <= load_use_hazzard;      // 更新这一周期的load_use_hazzard
+            if (~prev_load_use_hazzard) begin
+                prev_refetch <= refetch;                // 在一切开始之前, 缓存还没有被改变过的(上个时钟周期最后时刻的)refetch信号
+                prev_taken <= taken;                    // 在一切开始之前， 缓存还没有被改变过的(上个时钟周期最后时刻的)taken
+    //          prev_predictBit <= predictBit_buffer;   // 生成上一周期的predictBit
+                prev_PC_IF <= PC_IF_buffer;         // 生成上一周期的PC_IF用于更新表
+                prev_PC_to_take <= PC_to_take;      // 上一周期的PC_to_take用于生成refetch
+            end
         end
     end
       
@@ -115,9 +124,9 @@ module Branch_Prediction(
     always @ (negedge clk or posedge rst) begin
         if (rst) begin  // reset BHT and BTB
             for(i = 0; i < 32; i = i + 1) begin
-                BHT_predictBit[i] <= 0;
-                BTB_predictedPC[i] <= 0;
-                BTB_PCindex[i] <= 0;
+                BHT_predictBit[i] <= 2'b0;
+                BTB_predictedPC[i] <= 64'b0;
+                BTB_PCindex[i] <= 64'b0;
             end
         end
         else begin
@@ -158,7 +167,7 @@ module Branch_Prediction(
 
     // 组合逻辑, 读取BTB和BHT, 生成refetch
     assign taken = isJB_IF ? (hashCollision ? 1'b0 : curr_predictBit[1]) : 1'b0;
-    assign PC_to_take = isJB_IF ? (hashCollision ? 1'b0 : BTB_predictedPC[PC_IF_hash]) : 8'b0;    
+    assign PC_to_take = isJB_IF ? (hashCollision ? 1'b0 : BTB_predictedPC[PC_IF_hash]) : 64'b0;    
     
     // 如果当前处于IF段的指令需要refetch，那么下一周期中需要清除这条指令在这个模块中（缓冲区）的影响
     // 当前ID段为J/B指令, 并且上一周期预测的跳转地址与这一周期ID段算出的不一致, 也需要refeth 主要是为了覆盖jalr预测跳转实际跳转而跳转地址由于寄存器变化而错误的情况

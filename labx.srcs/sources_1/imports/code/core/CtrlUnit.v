@@ -149,7 +149,7 @@ assign cmp_ctrl = {3{Bop}} &
         ({3{BLTU}} & cmp_LTU) |
         ({3{BGEU}} & cmp_GEU));  // to fill sth. in
 
-assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | JALR  | CSRRC | CSRRS | CSRRW; // to fill sth. in
+assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | CSRRC | CSRRS | CSRRW; // to fill sth. in
                                                                                                 // 1 -> ALU_inputA = rs1_EXE, 0 -> ALU_inputA = PC_EXE
 
 assign ALUSrc_B = ~(R_valid | Rw_valid | B_valid);  // to fill sth. in
@@ -205,7 +205,7 @@ assign mem_w = S_valid;
 
 assign MIO = L_valid | S_valid;
 
-assign rs1use = ALUSrc_A;  // to fill sth. in
+assign rs1use = ALUSrc_A | JALR;  // to fill sth. in
 
 assign rs2use = R_valid | Rw_valid | B_valid | S_valid;  // to fill sth. in
 
