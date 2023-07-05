@@ -71,7 +71,7 @@ wire [63:0] wt_data_WB, PC_WB, ALUout_WB, Datain_WB;
 wire [31:0] inst_WB;
 
 wire taken, refetch, j;
-wire [7:0] pc_to_take;
+wire [63:0] pc_to_take;
 wire [63:0] next_pc_IF, next_pc_ID;
 
 wire [63:0]PC_redirect_exp;
@@ -91,7 +91,7 @@ REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF & PC_EN_IF_exp_ID),.D(ultima
 add_64 add_IF(.a(PC_IF),.b(64'd4),.c(PC_4_IF));
 
 MUX2T1_64 mux_IF_normal(.I0(PC_ID + 4),.I1(jump_PC_ID),.s(Branch_ctrl),.o(next_pc_ID));
-MUX2T1_64 mux_IF_predict(.I0(PC_4_IF),.I1({32'b0,22'b0,pc_to_take,2'b0}),.s(taken),.o(next_pc_IF));
+MUX2T1_64 mux_IF_predict(.I0(PC_4_IF),.I1(pc_to_take),.s(taken),.o(next_pc_IF));
 MUX2T1_64 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
 MUX2T1_64 redirectPC(.I0(next_PC_IF),.I1(PC_redirect_exp),.s(redirect_mux_exp),.o(final_PC_IF));
 ExpInstPageFaultCatcher inst_page_fault_catcher(.inst_access_fault(inst_access_fault_IF),.final_PC(final_PC_IF),.ultimate_final_PC(ultimate_final_PC_IF));
@@ -102,14 +102,14 @@ Branch_Prediction branch_prediction(
         .clk(debug_clk),
         .rst(rst),
 
-        .PC_Branch(PC_IF[9:2]),
-        .opcode_IF(inst_IF[6:0]),
+        .PC_Branch(PC_IF),
+        .opcode_IF(inst_IF),
         .taken(taken),
         .PC_to_take(pc_to_take),
 
         .J(j),
         .Branch_ID(Branch_ctrl),
-        .PC_to_branch(jump_PC_ID[9:2]),
+        .PC_to_branch(jump_PC_ID),
         .refetch(refetch)
        );
 
