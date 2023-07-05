@@ -8,7 +8,7 @@ module ROM_D(
     reg[31:0] inst_data[0:4095];
 
     initial	begin
-        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel2.hex", inst_data);
+        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel15.hex", inst_data);
     end
 
     assign spo = inst_data[a];

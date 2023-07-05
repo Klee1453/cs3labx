@@ -1,0 +1,16 @@
+/arch/riscv/kernel/mm.c
+mm_init中kfreerange函数的范围过大，可能需要调整大小或直接注释掉（注释后软件跑不起来）
+
+/lib/printk.c
+putc函数调用的sbi_ecall无法实现，需要手动向对应内存写值					【*】
+
+/arch/riscv/kernel/vm.c
+第三次create_mapping为data段创建映射时范围过大，需要调整大小
+添加物理->物理的映射
+sfence指令改成nop
+
+/arch/riscv/kernel/proc.c
+去掉rand和set_priority函数，保持创建task的priority恒为2
+
+/arch/riscv/include/defs.h
+csr_read和csr_write宏前后添加指令以避免冒险

@@ -45,14 +45,14 @@ module MMU(
     output          inst_page_fault                         //inst page fault
 );
 
-    localparam SIZE = 17'h10000;                            //Set Total Size
-    localparam ADDR_LINE = 16;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地址  因为size有限，只有低line位的地址有效
+    localparam SIZE = 21'h100000;                           //Set Total Size
+    localparam ADDR_LINE = 20;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地址  因为size有限，只有低line位的地址有效
     localparam SIM_UART_ADDR = 32'h10000000;                //need to change with line 
 
     reg[7:0] data[0:SIZE-1];                                //the real data stored in Ram
 
     initial	begin
-        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel2.hex_output.hex", data);
+        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel15.hex_output.hex", data);
     end
 
     wire [63:0]addr_pa,m_final_pa,p_final_pa;
@@ -61,10 +61,10 @@ module MMU(
     wire [3:0]mode;
     wire [11:0]m_vpn2,m_vpn1,m_vpn0;
     wire [63:0]PC_va_t;
-    assign PC_va_t = PC_va + 64'h80200000;
+    assign PC_va_t = PC_va;
     
     wire [63:0]m_va_t;
-    assign m_va_t = addra + 64'h80200000;
+    assign m_va_t = addra;
     assign pgtbl2 = {satp[43:0],12'b0};
     assign mode = satp[63:60];
     assign m_vpn2 = {3'b0,(m_va_t[38:30]) * 8},
@@ -100,7 +100,7 @@ module MMU(
                     ((p_value2[0:0])&(!p_value2[1:1])&(!p_value1[1:1])&(p_value1[0:0])&(p_value0[0:0]))?{8'b00,p_pte0[53:0],PC_va_t[11:0]}:   //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1不为叶子 �? 0有效
                     64'b0;          //否则就是无效访问，直接设置为0即可�?
                         
-    assign PC_pa = (mode == 4'b0)? PC_va : (p_final_pa - 64'h80200000);
+    assign PC_pa = (mode == 4'b0)? PC_va : (p_final_pa);
     assign inst_page_fault = (mode == 4'b0)? 0 : p_final_page_fault;
 
     wire [63:0]m_pg;
@@ -128,7 +128,7 @@ module MMU(
                     64'b0;          //否则就是无效访问，直接设置为0即可�?
     //              
 
-    assign addr_pa = (mode == 4'b0)? addra : (m_final_pa - 64'h80200000);
+    assign addr_pa = (mode == 4'b0)? addra : (m_final_pa);
     assign ram_page_fault = (mode == 4'b0)? 0 : m_final_page_fault;
 
     wire   new_clk;
@@ -136,7 +136,7 @@ module MMU(
     integer i;
     always @ (posedge new_clk or posedge rst) begin
         if(rst) begin
-            for (i = 17'd8713; i<17'h10000; i = i + 1) data[i] <= 0;
+            for (i = 21'd9000; i< 21'h100000; i = i + 1) data[i] <= 0;
         end        
         else begin
             if (wea & (addr_pa != SIM_UART_ADDR)) begin

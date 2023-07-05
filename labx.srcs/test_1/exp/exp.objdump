@@ -1,0 +1,43 @@
+
+file.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <_begin>:
+   0:	00114537          	lui	a0,0x114
+   4:	5145051b          	addiw	a0,a0,1300
+   8:	10051073          	csrw	sstatus,a0
+   c:	10002573          	csrr	a0,sstatus
+  10:	00150513          	addi	a0,a0,1 # 114001 <_func+0x113f99>
+  14:	10051073          	csrw	sstatus,a0
+  18:	141025f3          	csrr	a1,sepc
+  1c:	00258593          	addi	a1,a1,2
+  20:	14159073          	csrw	sepc,a1
+  24:	00300613          	li	a2,3
+  28:	14261073          	csrw	scause,a2
+  2c:	143026f3          	csrr	a3,stval
+  30:	00468693          	addi	a3,a3,4
+  34:	14369073          	csrw	stval,a3
+  38:	06800713          	li	a4,104
+  3c:	00000793          	li	a5,0
+  40:	00e7b023          	sd	a4,0(a5)
+  44:	0007b503          	ld	a0,0(a5)
+  48:	10551073          	csrw	stvec,a0
+  4c:	00000073          	ecall
+
+0000000000000050 <_loop>:
+  50:	00140413          	addi	s0,s0,1
+  54:	00240413          	addi	s0,s0,2
+  58:	00340413          	addi	s0,s0,3
+  5c:	00440413          	addi	s0,s0,4
+  60:	00640413          	addi	s0,s0,6
+  64:	fedff0ef          	jal	ra,50 <_loop>
+
+0000000000000068 <_func>:
+  68:	00100493          	li	s1,1
+  6c:	00248493          	addi	s1,s1,2
+  70:	00348493          	addi	s1,s1,3
+  74:	00448493          	addi	s1,s1,4
+  78:	00548493          	addi	s1,s1,5
+  7c:	10200073          	sret

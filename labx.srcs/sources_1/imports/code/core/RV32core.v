@@ -28,7 +28,7 @@ wire[1:0] forward_ctrl_A, forward_ctrl_B;
 
 wire PC_EN_IF;
 wire [63:0] PC_IF, next_PC_IF, PC_4_IF, final_PC_IF, ultimate_final_PC_IF;
-wire [63:0] PC_pa_IF;
+wire [63:0] PC_pa_IF, PC_pa_IF_;
 wire [31:0] inst_IF;
 wire inst_access_fault_IF;
 
@@ -86,7 +86,7 @@ wire PC_EN_IF_exp_ID, reg_FD_stall_exp_ID, reg_DE_flush_exp_ID, reg_FD_flush_exp
 wire reg_EM_flush_exp_MEM, reg_DE_flush_exp_MEM, reg_FD_flush_exp_MEM;
 
 // IF
-REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF & PC_EN_IF_exp_ID),.D(ultimate_final_PC_IF),.Q(PC_IF));
+REG64_PC REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF & PC_EN_IF_exp_ID),.D(ultimate_final_PC_IF),.Q(PC_IF));
 
 add_64 add_IF(.a(PC_IF),.b(64'd4),.c(PC_4_IF));
 
@@ -96,7 +96,9 @@ MUX2T1_64 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
 MUX2T1_64 redirectPC(.I0(next_PC_IF),.I1(PC_redirect_exp),.s(redirect_mux_exp),.o(final_PC_IF));
 ExpInstPageFaultCatcher inst_page_fault_catcher(.inst_access_fault(inst_access_fault_IF),.final_PC(final_PC_IF),.ultimate_final_PC(ultimate_final_PC_IF));
 
-ROM_D inst_rom(.a(PC_pa_IF[13:2]),.spo(inst_IF));
+assign PC_pa_IF_ = PC_pa_IF - 64'h80200000;
+
+ROM_D inst_rom(.a(PC_pa_IF_[13:2]),.spo(inst_IF));
 
 Branch_Prediction branch_prediction(
         .clk(debug_clk),
