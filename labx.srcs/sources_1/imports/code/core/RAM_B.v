@@ -46,7 +46,7 @@ module MMU(
 );
 
     localparam SIZE = 17'h10000;                            //Set Total Size
-    localparam ADDR_LINE = 16;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地坿  因为size有限，只有低line位的地址有效
+    localparam ADDR_LINE = 16;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地址  因为size有限，只有低line位的地址有效
     localparam SIM_UART_ADDR = 32'h10000000;                //need to change with line 
 
     reg[7:0] data[0:SIZE-1];                                //the real data stored in Ram
@@ -59,11 +59,13 @@ module MMU(
     wire [63:0]PC_va_t;
     assign PC_va_t = PC_va + 64'h80200000;
     
+    wire [63:0]m_va_t;
+    assign m_va_t = addra + 64'h80200000;
     assign pgtbl2 = {satp[43:0],12'b0};
     assign mode = satp[63:60];
-    assign m_vpn2 = {3'b0,(addra[38:30]) * 8},
-           m_vpn1 = {3'b0,addra[29:21] * 8},
-           m_vpn0 = {3'b0,addra[20:12] * 8};
+    assign m_vpn2 = {3'b0,(m_va_t[38:30]) * 8},
+           m_vpn1 = {3'b0,m_va_t[29:21] * 8},
+           m_vpn0 = {3'b0,m_va_t[20:12] * 8};
     
     wire [11:0]p_vpn2,p_vpn1,p_vpn0;
     assign p_vpn2 = {3'b0,(PC_va_t[38:30]) * 8},
@@ -88,11 +90,11 @@ module MMU(
     assign p_pg = {p_pte0[53:10] , 12'b0};
     //
     assign p_final_page_fault = (!p_value2[0:0]) | ((!p_value2[1:1])&(p_value2[0:0])&(!p_value1[0:0])) | ((!p_value2[1:1])&(p_value2[0:0])&(!p_value1[1:1])&(p_value1[0:0])&(!p_value0[0:0]));
-    //                          根无敿          根非页且有效且当前无敿                                   根非页且有效 1非页且有敿 0无效
+    //                          根无效          根非页且有效且当前无效                                   根非页且有效 1非页且有效 0无效
     assign p_final_pa =  (p_value2[0:0]&(p_value2[1:1]))?({8'b0,p_pte2[53:28],PC_va_t[29:0]}):                                                     //根页表有效且根页表为叶子
-                    ((p_value2[0:0])&(!p_value2[1:1])&(p_value1[1:1])&(p_value1[0:0]))?({8'b0,p_pte1[53:19],PC_va_t[20:0]}):                  //根节点有敿 丿 根节点不为叶孿 丿 1有效 丿 1叶子
-                    ((p_value2[0:0])&(!p_value2[1:1])&(!p_value1[1:1])&(p_value1[0:0])&(p_value0[0:0]))?{8'b00,p_pte0[53:0],PC_va_t[11:0]}:   //根节点有敿 丿 根节点不为叶孿 丿 1有效 丿 1不为叶子 丿 0有效
-                    64'b0;          //否则就是无效访问，直接设置为0即可〿
+                    ((p_value2[0:0])&(!p_value2[1:1])&(p_value1[1:1])&(p_value1[0:0]))?({8'b0,p_pte1[53:19],PC_va_t[20:0]}):                  //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1叶子
+                    ((p_value2[0:0])&(!p_value2[1:1])&(!p_value1[1:1])&(p_value1[0:0])&(p_value0[0:0]))?{8'b00,p_pte0[53:0],PC_va_t[11:0]}:   //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1不为叶子 �? 0有效
+                    64'b0;          //否则就是无效访问，直接设置为0即可�?
                         
     assign PC_pa = (mode == 4'b0)? PC_va : (p_final_pa - 64'h80200000);
     assign inst_page_fault = (mode == 4'b0)? 0 : p_final_page_fault;
@@ -115,14 +117,14 @@ module MMU(
     assign m_pg = {m_pte0[53:10] , 12'b0};
     //
     assign m_final_page_fault = (!m_value2[0:0]) | ((!m_value2[1:1])&(m_value2[0:0])&(!m_value1[0:0])) | ((!m_value2[1:1])&(m_value2[0:0])&(!m_value1[1:1])&(m_value1[0:0])&(!m_value0[0:0]));
-    //                          根无敿          根非页且有效且当前无敿                                   根非页且有效 1非页且有敿 0无效
-    assign m_final_pa =  (m_value2[0:0]&(m_value2[1:1]))?({8'b0,m_pte2[53:28],addra[29:0]}):                                                     //根页表有效且根页表为叶子
-                    ((m_value2[0:0])&(!m_value2[1:1])&(m_value1[1:1])&(m_value1[0:0]))?({8'b0,m_pte1[53:19],addra[20:0]}):                  //根节点有敿 丿 根节点不为叶孿 丿 1有效 丿 1叶子
-                    ((m_value2[0:0])&(!m_value2[1:1])&(!m_value1[1:1])&(m_value1[0:0])&(m_value0[0:0]))?{8'b0 , m_pte0[53:0] , addra[11:0]}:   //根节点有敿 丿 根节点不为叶孿 丿 1有效 丿 1不为叶子 丿 0有效
-                    64'b0;          //否则就是无效访问，直接设置为0即可〿
+    //                          根无效          根非页且有效且当前无效                                   根非页且有效 1非页且有效 0无效
+    assign m_final_pa =  (m_value2[0:0]&(m_value2[1:1]))?({8'b0,m_pte2[53:28],m_va_t[29:0]}):                                                     //根页表有效且根页表为叶子
+                    ((m_value2[0:0])&(!m_value2[1:1])&(m_value1[1:1])&(m_value1[0:0]))?({8'b0,m_pte1[53:19],m_va_t[20:0]}):                  //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1叶子
+                    ((m_value2[0:0])&(!m_value2[1:1])&(!m_value1[1:1])&(m_value1[0:0])&(m_value0[0:0]))?{8'b0 , m_pte0[53:0] , m_va_t[11:0]}:   //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1不为叶子 �? 0有效
+                    64'b0;          //否则就是无效访问，直接设置为0即可�?
     //              
 
-    assign addr_pa = (mode == 4'b0)? addra : m_final_pa;
+    assign addr_pa = (mode == 4'b0)? addra : (m_final_pa - 64'h80200000);
     assign ram_page_fault = (mode == 4'b0)? 0 : m_final_page_fault;
 
     wire   new_clk;
@@ -184,8 +186,6 @@ module MMU(
         end
     end
 endmodule
-
-
 
 
 
