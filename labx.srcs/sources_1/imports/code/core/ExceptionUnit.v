@@ -10,6 +10,7 @@ module ExceptionUnit(
         input[63:0] csr_w_data_reg,         // genernal registers used in CSRRW, CSRRS, CSRRC
         input[4:0] csr_w_data_imm,          // zimm in CSRR[W,S,C]I
         output[63:0] csr_r_data_out,        // read data of CSR write-after-read instructions
+        output[63:0] satp_o,                // satp read value for MMU
 
                                             // [WB]
         input interrupt,                    // external interrupt source, for future use
@@ -45,7 +46,7 @@ wire trap = interrupt | exception;
 
 CSRRegs csr(.clk(clk),.rst(rst),.csr_w(csr_w),.raddr(csr_raddr),.waddr(csr_waddr),
             .wdata(csr_wdata),.rdata(csr_r_data_out),.sstatus(sstatus),.csr_wsc_mode(csr_wsc),
-            .is_trap(trap),.is_sret(sret),.sepc(sepc),.scause(scause),.stval(stval),.stvec(stvec),.sepc_o(sepc_o));
+            .is_trap(trap),.is_sret(sret),.sepc(sepc),.scause(scause),.stval(stval),.stvec(stvec),.sepc_o(sepc_o),.satp_o(satp_o));
 
 //According to the diagram, design the Exception Unit
 

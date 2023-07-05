@@ -15,7 +15,8 @@ module CSRRegs(
         input[63:0] scause,
         input[63:0] stval,
         output[63:0] stvec,
-        output[63:0] sepc_o
+        output[63:0] sepc_o,
+        output[63:0] satp_o
        );
 
 reg[63:0] CSR [0:7];
@@ -65,8 +66,9 @@ wire waddr_valid = (waddr_map != 3'h7);
 // the privilege level is set to user mode if the SPP bit is 0, or supervisor mode if the SPP bit is 1; SPP is then set to 0.
 assign sstatus = CSR_old[0];
 
-assign stvec = CSR_old[1];
+assign stvec  = CSR_old[1];
 assign sepc_o = CSR_old[3];
+assign satp_o = CSR_old[6];
 
 always@(posedge clk) begin              // 在每个时钟周期开始时，备份所有CSR寄存器作为旧值
     CSR_old[0] <= CSR[0];

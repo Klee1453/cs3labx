@@ -61,7 +61,7 @@ wire l_access_fault_MEM = 0;
 wire s_access_fault_MEM = 0;
 wire ram_page_fault_MEM = 0;
 wire[63:0] CSRout_MEM;
-wire[63:0] satp_MEM = 0;
+wire[63:0] satp_MEM;
 
 wire reg_MW_EN, RegWrite_WB, DatatoReg_WB;
 wire isFlushed_WB;          // added for exception unit
@@ -96,7 +96,7 @@ MUX2T1_64 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
 MUX2T1_64 redirectPC(.I0(next_PC_IF),.I1(PC_redirect_exp),.s(redirect_mux_exp),.o(final_PC_IF));
 ExpInstPageFaultCatcher inst_page_fault_catcher(.inst_access_fault(inst_access_fault_IF),.final_PC(final_PC_IF),.ultimate_final_PC(ultimate_final_PC_IF));
 
-ROM_D inst_rom(.a(PC_pa_IF[9:2]),.spo(inst_IF));
+ROM_D inst_rom(.a(PC_pa_IF[13:2]),.spo(inst_IF));
 
 Branch_Prediction branch_prediction(
         .clk(debug_clk),
@@ -223,7 +223,7 @@ ExpMEMCatcher exception_catcher_MEM(.ram_page_fault(ram_page_fault_MEM),
 ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
     .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
     .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(inst_MEM[24:20]),
-    .csr_r_data_out(CSRout_MEM),
+    .csr_r_data_out(CSRout_MEM),.satp_o(satp_MEM),
 
     .interrupt(interrupter),
     .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),

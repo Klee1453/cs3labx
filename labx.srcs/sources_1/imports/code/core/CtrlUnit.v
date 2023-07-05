@@ -67,12 +67,12 @@ wire SLTIU = Iop  & funct3_3;
 wire XORI  = Iop  & funct3_4;
 wire ORI   = Iop  & funct3_6;
 wire ANDI  = Iop  & funct3_7;
-wire SLLI  = Iop  & funct3_1 & funct7_0;
-wire SLLIW = Iwop & funct3_1 & funct7_0;  // rv64i word-wide inst
-wire SRLI  = Iop  & funct3_5 & funct7_0;
-wire SRLIW = Iwop & funct3_5 & funct7_0;  // rv64i word-wide inst
-wire SRAI  = Iop  & funct3_5 & funct7_32;
-wire SRAIW = Iwop & funct3_5 & funct7_0;  // rv64i word-wide inst
+wire SLLI  = Iop  & funct3_1 & (funct7[6:1] == 6'b0);
+wire SLLIW = Iwop & funct3_1 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
+wire SRLI  = Iop  & funct3_5 & (funct7[6:1] == 6'b0);
+wire SRLIW = Iwop & funct3_5 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
+wire SRAI  = Iop  & funct3_5 & (funct7[6:1] == 6'b010000);
+wire SRAIW = Iwop & funct3_5 & funct7_0;                       // rv64i word-wide inst
 
 wire BEQ  = Bop & funct3_0;  // to fill sth. in
 wire BNE  = Bop & funct3_1;  // to fill sth. in
