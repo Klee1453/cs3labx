@@ -67,12 +67,12 @@ wire SLTIU = Iop  & funct3_3;
 wire XORI  = Iop  & funct3_4;
 wire ORI   = Iop  & funct3_6;
 wire ANDI  = Iop  & funct3_7;
-wire SLLI  = Iop  & funct3_1 & funct7_0;
-wire SLLIW = Iwop & funct3_1 & funct7_0;  // rv64i word-wide inst
-wire SRLI  = Iop  & funct3_5 & funct7_0;
-wire SRLIW = Iwop & funct3_5 & funct7_0;  // rv64i word-wide inst
-wire SRAI  = Iop  & funct3_5 & funct7_32;
-wire SRAIW = Iwop & funct3_5 & funct7_0;  // rv64i word-wide inst
+wire SLLI  = Iop  & funct3_1 & (funct7[6:1] == 6'b0);
+wire SLLIW = Iwop & funct3_1 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
+wire SRLI  = Iop  & funct3_5 & (funct7[6:1] == 6'b0);
+wire SRLIW = Iwop & funct3_5 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
+wire SRAI  = Iop  & funct3_5 & (funct7[6:1] == 6'b010000);
+wire SRAIW = Iwop & funct3_5 & funct7_0;                       // rv64i word-wide inst
 
 wire BEQ  = Bop & funct3_0;  // to fill sth. in
 wire BNE  = Bop & funct3_1;  // to fill sth. in
@@ -149,7 +149,7 @@ assign cmp_ctrl = {3{Bop}} &
         ({3{BLTU}} & cmp_LTU) |
         ({3{BGEU}} & cmp_GEU));  // to fill sth. in
 
-assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | JALR  | CSRRC | CSRRS | CSRRW; // to fill sth. in
+assign ALUSrc_A = R_valid | Rw_valid | I_valid | Iw_valid | B_valid | L_valid | S_valid | CSRRC | CSRRS | CSRRW; // to fill sth. in
                                                                                                 // 1 -> ALU_inputA = rs1_EXE, 0 -> ALU_inputA = PC_EXE
 
 assign ALUSrc_B = ~(R_valid | Rw_valid | B_valid);  // to fill sth. in
@@ -205,7 +205,7 @@ assign mem_w = S_valid;
 
 assign MIO = L_valid | S_valid;
 
-assign rs1use = ALUSrc_A;  // to fill sth. in
+assign rs1use = ALUSrc_A | JALR;  // to fill sth. in
 
 assign rs2use = R_valid | Rw_valid | B_valid | S_valid;  // to fill sth. in
 

@@ -28,7 +28,7 @@ wire[1:0] forward_ctrl_A, forward_ctrl_B;
 
 wire PC_EN_IF;
 wire [63:0] PC_IF, next_PC_IF, PC_4_IF, final_PC_IF, ultimate_final_PC_IF;
-wire [63:0] PC_pa_IF;
+wire [63:0] PC_pa_IF, PC_pa_IF_;
 wire [31:0] inst_IF;
 wire inst_access_fault_IF;
 
@@ -61,7 +61,7 @@ wire l_access_fault_MEM = 0;
 wire s_access_fault_MEM = 0;
 wire ram_page_fault_MEM = 0;
 wire[63:0] CSRout_MEM;
-wire[63:0] satp_MEM = 0;
+wire[63:0] satp_MEM;
 
 wire reg_MW_EN, RegWrite_WB, DatatoReg_WB;
 wire isFlushed_WB;          // added for exception unit
@@ -71,7 +71,7 @@ wire [63:0] wt_data_WB, PC_WB, ALUout_WB, Datain_WB;
 wire [31:0] inst_WB;
 
 wire taken, refetch, j;
-wire [7:0] pc_to_take;
+wire [63:0] pc_to_take;
 wire [63:0] next_pc_IF, next_pc_ID;
 
 wire [63:0]PC_redirect_exp;
@@ -86,30 +86,33 @@ wire PC_EN_IF_exp_ID, reg_FD_stall_exp_ID, reg_DE_flush_exp_ID, reg_FD_flush_exp
 wire reg_EM_flush_exp_MEM, reg_DE_flush_exp_MEM, reg_FD_flush_exp_MEM;
 
 // IF
-REG64 REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF & PC_EN_IF_exp_ID),.D(ultimate_final_PC_IF),.Q(PC_IF));
+REG64_PC REG_PC(.clk(debug_clk),.rst(rst),.CE(PC_EN_IF & PC_EN_IF_exp_ID),.D(ultimate_final_PC_IF),.Q(PC_IF));
 
 add_64 add_IF(.a(PC_IF),.b(64'd4),.c(PC_4_IF));
 
 MUX2T1_64 mux_IF_normal(.I0(PC_ID + 4),.I1(jump_PC_ID),.s(Branch_ctrl),.o(next_pc_ID));
-MUX2T1_64 mux_IF_predict(.I0(PC_4_IF),.I1({32'b0,22'b0,pc_to_take,2'b0}),.s(taken),.o(next_pc_IF));
+MUX2T1_64 mux_IF_predict(.I0(PC_4_IF),.I1(pc_to_take),.s(taken),.o(next_pc_IF));
 MUX2T1_64 mux_IF(.I0(next_pc_IF),.I1(next_pc_ID),.s(refetch),.o(next_PC_IF));
 MUX2T1_64 redirectPC(.I0(next_PC_IF),.I1(PC_redirect_exp),.s(redirect_mux_exp),.o(final_PC_IF));
 ExpInstPageFaultCatcher inst_page_fault_catcher(.inst_access_fault(inst_access_fault_IF),.final_PC(final_PC_IF),.ultimate_final_PC(ultimate_final_PC_IF));
 
-ROM_D inst_rom(.a(PC_pa_IF[9:2]),.spo(inst_IF));
+assign PC_pa_IF_ = PC_pa_IF - 64'h80200000;
+
+ROM_D inst_rom(.a(PC_pa_IF_[13:2]),.spo(inst_IF));
 
 Branch_Prediction branch_prediction(
         .clk(debug_clk),
         .rst(rst),
 
-        .PC_Branch(PC_IF[9:2]),
-        .opcode_IF(inst_IF[6:0]),
+        .PC_Branch(PC_IF),
+        .opcode_IF(inst_IF),
         .taken(taken),
         .PC_to_take(pc_to_take),
 
         .J(j),
         .Branch_ID(Branch_ctrl),
-        .PC_to_branch(jump_PC_ID[9:2]),
+        .PC_to_branch(jump_PC_ID),
+        .load_use_hazzard(reg_FD_stall),
         .refetch(refetch)
        );
 
@@ -223,7 +226,7 @@ ExpMEMCatcher exception_catcher_MEM(.ram_page_fault(ram_page_fault_MEM),
 ExceptionUnit exp_unit(.clk(debug_clk),.rst(rst),.csr_rw_in(csr_rw_MEM),.csr_wsc_mode_in(inst_MEM[13:12]),
     .csr_w_imm_mux(csr_w_imm_mux_MEM),.csr_rw_addr_in(inst_MEM[31:20]),
     .csr_w_data_reg(rs1_data_MEM),.csr_w_data_imm(inst_MEM[24:20]),
-    .csr_r_data_out(CSRout_MEM),
+    .csr_r_data_out(CSRout_MEM),.satp_o(satp_MEM),
 
     .interrupt(interrupter),
     .illegal_inst(~isFlushed_WB & exp_vector_WB[5]),

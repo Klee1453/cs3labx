@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="6120001fs"></ZoomEndTime>
-      <Cursor1Time time="5200000fs"></Cursor1Time>
+      <ZoomStartTime time="258815004000fs"></ZoomStartTime>
+      <ZoomEndTime time="258823754001fs"></ZoomEndTime>
+      <Cursor1Time time="258820524000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="158"></NameColumnWidth>
       <ValueColumnWidth column_width="59"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="70" />
+   <WVObjectSize size="83" />
    <wvobject fp_name="/core_sim/clk" type="logic">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
@@ -47,6 +47,7 @@
    <wvobject fp_name="/core_sim/core/register/register" type="array">
       <obj_property name="ElementShortName">register[1:31][63:0]</obj_property>
       <obj_property name="ObjectShortName">register[1:31][63:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
    <wvobject fp_name="/core_sim/core/Branch_ctrl" type="logic">
       <obj_property name="ElementShortName">Branch_ctrl</obj_property>
@@ -197,8 +198,54 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/core_sim/core/branch_prediction/PC_Branch" type="array">
-      <obj_property name="ElementShortName">PC_Branch[7:0]</obj_property>
-      <obj_property name="ObjectShortName">PC_Branch[7:0]</obj_property>
+      <obj_property name="ElementShortName">PC_Branch[63:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_Branch[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/BTB_PCindex" type="array">
+      <obj_property name="ElementShortName">BTB_PCindex[31:0][63:0]</obj_property>
+      <obj_property name="ObjectShortName">BTB_PCindex[31:0][63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/prev_PC_hash" type="array">
+      <obj_property name="ElementShortName">prev_PC_hash[4:0]</obj_property>
+      <obj_property name="ObjectShortName">prev_PC_hash[4:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/prev_PC_IF" type="array">
+      <obj_property name="ElementShortName">prev_PC_IF[63:0]</obj_property>
+      <obj_property name="ObjectShortName">prev_PC_IF[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/isJB_IF" type="logic">
+      <obj_property name="ElementShortName">isJB_IF</obj_property>
+      <obj_property name="ObjectShortName">isJB_IF</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/hashCollision" type="logic">
+      <obj_property name="ElementShortName">hashCollision</obj_property>
+      <obj_property name="ObjectShortName">hashCollision</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/BHT_predictBit" type="array">
+      <obj_property name="ElementShortName">BHT_predictBit[31:0][1:0]</obj_property>
+      <obj_property name="ObjectShortName">BHT_predictBit[31:0][1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/PC_IF_hash" type="array">
+      <obj_property name="ElementShortName">PC_IF_hash[4:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_IF_hash[4:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/curr_predictBit" type="array">
+      <obj_property name="ElementShortName">curr_predictBit[1:0]</obj_property>
+      <obj_property name="ObjectShortName">curr_predictBit[1:0]</obj_property>
       <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -209,8 +256,8 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/core_sim/core/branch_prediction/PC_to_take" type="array">
-      <obj_property name="ElementShortName">PC_to_take[7:0]</obj_property>
-      <obj_property name="ObjectShortName">PC_to_take[7:0]</obj_property>
+      <obj_property name="ElementShortName">PC_to_take[63:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_to_take[63:0]</obj_property>
       <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -227,8 +274,20 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/core_sim/core/branch_prediction/PC_to_branch" type="array">
-      <obj_property name="ElementShortName">PC_to_branch[7:0]</obj_property>
-      <obj_property name="ObjectShortName">PC_to_branch[7:0]</obj_property>
+      <obj_property name="ElementShortName">PC_to_branch[63:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_to_branch[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/jalr_err" type="logic">
+      <obj_property name="ElementShortName">jalr_err</obj_property>
+      <obj_property name="ObjectShortName">jalr_err</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/branch_prediction/predict_err" type="logic">
+      <obj_property name="ElementShortName">predict_err</obj_property>
+      <obj_property name="ObjectShortName">predict_err</obj_property>
       <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -311,12 +370,6 @@
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject fp_name="/core_sim/core/exp_unit/csr/CSR_before_write" type="array">
-      <obj_property name="ElementShortName">CSR_before_write[63:0]</obj_property>
-      <obj_property name="ObjectShortName">CSR_before_write[63:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/core_sim/core/exp_unit/csr/is_trap" type="logic">
       <obj_property name="ElementShortName">is_trap</obj_property>
       <obj_property name="ObjectShortName">is_trap</obj_property>
@@ -354,5 +407,29 @@
    <wvobject fp_name="/core_sim/core/register/Wt_data" type="array">
       <obj_property name="ElementShortName">Wt_data[63:0]</obj_property>
       <obj_property name="ObjectShortName">Wt_data[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/data_ram_mmu/PC_va" type="array">
+      <obj_property name="ElementShortName">PC_va[63:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_va[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFD700</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/data_ram_mmu/PC_pa" type="array">
+      <obj_property name="ElementShortName">PC_pa[63:0]</obj_property>
+      <obj_property name="ObjectShortName">PC_pa[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFD700</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/data_ram_mmu/addra" type="array">
+      <obj_property name="ElementShortName">addra[63:0]</obj_property>
+      <obj_property name="ObjectShortName">addra[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFD700</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/core_sim/core/data_ram_mmu/addr_pa" type="array">
+      <obj_property name="ElementShortName">addr_pa[63:0]</obj_property>
+      <obj_property name="ObjectShortName">addr_pa[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFD700</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
 </wave_config>

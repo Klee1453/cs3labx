@@ -45,58 +45,62 @@ module MMU(
     output          inst_page_fault                         //inst page fault
 );
 
-    localparam SIZE = 17'h10000;                            //Set Total Size
-    localparam ADDR_LINE = 10;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地址  因为size有限，只有低line位的地址有效
+    localparam SIZE = 21'h100000;                           //Set Total Size
+    localparam ADDR_LINE = 20;                              //need to change        with SIZE   具体意义即为addra中的低line位，代表真正的地址  因为size有限，只有低line位的地址有效
     localparam SIM_UART_ADDR = 32'h10000000;                //need to change with line 
 
     reg[7:0] data[0:SIZE-1];                                //the real data stored in Ram
 
     initial	begin
-        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\Lab1\\src\\lab1\\lab1.sim\\sim_1\\behav\\xsim\\ram.hex", data);
+        $readmemh("D:\\Office\\2023.3-2023.7\\ComputingSystemsIII\\labx\\test\\kernel\\kernel15.hex_output.hex", data);
     end
 
     wire [63:0]addr_pa,m_final_pa,p_final_pa;
     wire m_final_page_fault,p_final_page_fault;
     wire [56:0]pgtbl2;
     wire [3:0]mode;
-    wire [8:0]m_vpn2,m_vpn1,m_vpn0;
+    wire [11:0]m_vpn2,m_vpn1,m_vpn0;
+    wire [63:0]PC_va_t;
+    assign PC_va_t = PC_va;
     
+    wire [63:0]m_va_t;
+    assign m_va_t = addra;
     assign pgtbl2 = {satp[43:0],12'b0};
     assign mode = satp[63:60];
-    assign m_vpn2 = addra[38:30],
-           m_vpn1 = addra[29:21],
-           m_vpn0 = addra[20:12];
+    assign m_vpn2 = {3'b0,(m_va_t[38:30]) * 8},
+           m_vpn1 = {3'b0,m_va_t[29:21] * 8},
+           m_vpn0 = {3'b0,m_va_t[20:12] * 8};
     
-    wire [8:0]p_vpn2,p_vpn1,p_vpn0;
-    assign p_vpn2 = addra[38:30],
-           p_vpn1 = addra[29:21],
-           p_vpn0 = addra[20:12];
+    wire [11:0]p_vpn2,p_vpn1,p_vpn0;
+    assign p_vpn2 = {3'b0,(PC_va_t[38:30]) * 8},
+           p_vpn1 = {3'b0,PC_va_t[29:21] * 8},
+           p_vpn0 = {3'b0,PC_va_t[20:12] * 8};
     //this part is used to get pa
     wire [63:0]p_pg;
     wire [56:0]p_pgtbl1,p_pgtbl0;
     wire [1:0]p_value2,p_value1,p_value0;           //where R|W|X and V
     wire [63:0]p_pte2,p_pte1,p_pte0;
     //
-    assign p_pte2 = {data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+7],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+6],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+5],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+4],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+3],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+2],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+1],data[{pgtbl2[ADDR_LINE-1:9],p_vpn2}+0]};
+    assign p_pte2 = {data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+7],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+6],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+5],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+4],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+3],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+2],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+1],data[{pgtbl2[ADDR_LINE-1:12],p_vpn2}+0]};
     assign p_value2 = {(p_pte2[1:1] | p_pte2[2:2] | p_pte2[3:3]),p_pte2[0:0]};
     assign p_pgtbl1 = {p_pte2[53:10] , 12'b0};
     //
-    assign p_pte1 = {data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+7],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+6],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+5],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+4],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+3],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+2],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+1],data[{p_pgtbl1[ADDR_LINE-1:9],p_vpn1}+0]};
+    assign p_pte1 = {data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+7],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+6],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+5],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+4],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+3],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+2],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+1],data[{p_pgtbl1[ADDR_LINE-1:12],p_vpn1}+0]};
     assign p_value1 = {(p_pte1[1:1] | p_pte1[2:2] | p_pte1[3:3]),p_pte1[0:0]};
     assign p_pgtbl0 = {p_pte1[53:10] , 12'b0};
     //
-    assign p_pte0 = {data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+7],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+6],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+5],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+4],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+3],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+2],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+1],data[{p_pgtbl0[ADDR_LINE-1:9],p_vpn0}+0]};
+    assign p_pte0 = {data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+7],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+6],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+5],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+4],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+3],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+2],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+1],data[{p_pgtbl0[ADDR_LINE-1:12],p_vpn0}+0]};
     assign p_value0 = {(p_pte0[1:1] | p_pte0[2:2] | p_pte0[3:3]),p_pte0[0:0]};
     assign p_pg = {p_pte0[53:10] , 12'b0};
     //
     assign p_final_page_fault = (!p_value2[0:0]) | ((!p_value2[1:1])&(p_value2[0:0])&(!p_value1[0:0])) | ((!p_value2[1:1])&(p_value2[0:0])&(!p_value1[1:1])&(p_value1[0:0])&(!p_value0[0:0]));
     //                          根无效          根非页且有效且当前无效                                   根非页且有效 1非页且有效 0无效
-    assign p_final_pa =  (p_value2[0:0]&(p_value2[1:1]))?({8'b0,p_pte2[53:28],PC_va[29:0]}):                                                     //根页表有效且根页表为叶子
-                    ((p_value2[0:0])&(!p_value2[1:1])&(p_value1[1:1])&(p_value1[0:0]))?({8'b0,p_pte1[53:19],PC_va[20:0]}):                  //根节点有效 且 根节点不为叶子 且 1有效 且 1叶子
-                    ((p_value2[0:0])&(!p_value2[1:1])&(!p_value1[1:1])&(p_value1[0:0])&(p_value0[0:0]))?{8'b00,p_pte0[53:0],PC_va[11:0]}:   //根节点有效 且 根节点不为叶子 且 1有效 且 1不为叶子 且 0有效
-                    64'b0;          //否则就是无效访问，直接设置为0即可。
+    assign p_final_pa =  (p_value2[0:0]&(p_value2[1:1]))?({8'b0,p_pte2[53:28],PC_va_t[29:0]}):                                                     //根页表有效且根页表为叶子
+                    ((p_value2[0:0])&(!p_value2[1:1])&(p_value1[1:1])&(p_value1[0:0]))?({8'b0,p_pte1[53:19],PC_va_t[20:0]}):                  //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1叶子
+                    ((p_value2[0:0])&(!p_value2[1:1])&(!p_value1[1:1])&(p_value1[0:0])&(p_value0[0:0]))?{8'b00,p_pte0[53:0],PC_va_t[11:0]}:   //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1不为叶子 �? 0有效
+                    64'b0;          //否则就是无效访问，直接设置为0即可�?
                         
-    assign PC_pa = (mode == 4'b0)? PC_va : p_final_pa;
+    assign PC_pa = (mode == 4'b0)? PC_va : (p_final_pa);
     assign inst_page_fault = (mode == 4'b0)? 0 : p_final_page_fault;
 
     wire [63:0]m_pg;
@@ -104,27 +108,27 @@ module MMU(
     wire [1:0]m_value2,m_value1,m_value0;           //where R|W|X and V
     wire [63:0]m_pte2,m_pte1,m_pte0;
     //
-    assign m_pte2 = {data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+7],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+6],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+5],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+4],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+3],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+2],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+1],data[{pgtbl2[ADDR_LINE-1:9],m_vpn2}+0]};
+    assign m_pte2 = {data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+7],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+6],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+5],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+4],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+3],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+2],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+1],data[{pgtbl2[ADDR_LINE-1:12],m_vpn2}+0]};
     assign m_value2 = {(m_pte2[1:1] | m_pte2[2:2] | m_pte2[3:3]),m_pte2[0:0]};
     assign m_pgtbl1 = {m_pte2[53:10] , 12'b0};
     //
-    assign m_pte1 = {data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+7],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+6],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+5],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+4],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+3],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+2],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+1],data[{m_pgtbl1[ADDR_LINE-1:9],m_vpn1}+0]};
+    assign m_pte1 = {data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+7],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+6],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+5],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+4],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+3],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+2],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+1],data[{m_pgtbl1[ADDR_LINE-1:12],m_vpn1}+0]};
     assign m_value1 = {(m_pte1[1:1] | m_pte1[2:2] | m_pte1[3:3]),m_pte1[0:0]};
     assign m_pgtbl0 = {m_pte1[53:10] , 12'b0};
     //
-    assign m_pte0 = {data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+7],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+6],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+5],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+4],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+3],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+2],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+1],data[{m_pgtbl0[ADDR_LINE-1:9],m_vpn0}+0]};
+    assign m_pte0 = {data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+7],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+6],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+5],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+4],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+3],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+2],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+1],data[{m_pgtbl0[ADDR_LINE-1:12],m_vpn0}+0]};
     assign m_value0 = {(m_pte0[1:1] | m_pte0[2:2] | m_pte0[3:3]),m_pte0[0:0]};
     assign m_pg = {m_pte0[53:10] , 12'b0};
     //
     assign m_final_page_fault = (!m_value2[0:0]) | ((!m_value2[1:1])&(m_value2[0:0])&(!m_value1[0:0])) | ((!m_value2[1:1])&(m_value2[0:0])&(!m_value1[1:1])&(m_value1[0:0])&(!m_value0[0:0]));
     //                          根无效          根非页且有效且当前无效                                   根非页且有效 1非页且有效 0无效
-    assign m_final_pa =  (m_value2[0:0]&(m_value2[1:1]))?({8'b0,m_pte2[53:28],addra[29:0]}):                                                     //根页表有效且根页表为叶子
-                    ((m_value2[0:0])&(!m_value2[1:1])&(m_value1[1:1])&(m_value1[0:0]))?({8'b0,m_pte1[53:19],addra[20:0]}):                  //根节点有效 且 根节点不为叶子 且 1有效 且 1叶子
-                    ((m_value2[0:0])&(!m_value2[1:1])&(!m_value1[1:1])&(m_value1[0:0])&(m_value0[0:0]))?{8'b0 , m_pte0[53:0] , addra[11:0]}:   //根节点有效 且 根节点不为叶子 且 1有效 且 1不为叶子 且 0有效
-                    64'b0;          //否则就是无效访问，直接设置为0即可。
+    assign m_final_pa =  (m_value2[0:0]&(m_value2[1:1]))?({8'b0,m_pte2[53:28],m_va_t[29:0]}):                                                     //根页表有效且根页表为叶子
+                    ((m_value2[0:0])&(!m_value2[1:1])&(m_value1[1:1])&(m_value1[0:0]))?({8'b0,m_pte1[53:19],m_va_t[20:0]}):                  //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1叶子
+                    ((m_value2[0:0])&(!m_value2[1:1])&(!m_value1[1:1])&(m_value1[0:0])&(m_value0[0:0]))?{8'b0 , m_pte0[53:0] , m_va_t[11:0]}:   //根节点有效 �? 根节点不为叶�? �? 1有效 �? 1不为叶子 �? 0有效
+                    64'b0;          //否则就是无效访问，直接设置为0即可�?
     //              
 
-    assign addr_pa = (mode == 4'b0)? addra : m_final_pa;
+    assign addr_pa = (mode == 4'b0)? addra : (m_final_pa);
     assign ram_page_fault = (mode == 4'b0)? 0 : m_final_page_fault;
 
     wire   new_clk;
@@ -132,7 +136,7 @@ module MMU(
     integer i;
     always @ (posedge new_clk or posedge rst) begin
         if(rst) begin
-            // for (i = 0; i<17'h10000; i = i + 1) data[i] <= 0;
+            for (i = 21'd9000; i< 21'h100000; i = i + 1) data[i] <= 0;
         end        
         else begin
             if (wea & (addr_pa != SIM_UART_ADDR)) begin
@@ -179,7 +183,7 @@ module MMU(
     assign sim_uart_char_valid = uart_addr_valid;
     assign sim_uart_char_out   = uart_char;
     always @(posedge clka) begin
-        uart_addr_valid <= wea & (addr_pa == SIM_UART_ADDR);
+        uart_addr_valid <= wea & (addr_pa == SIM_UART_ADDR | addra == SIM_UART_ADDR);
         uart_char <= dina[7:0];
         if (sim_uart_char_valid) begin
             $write("%c", sim_uart_char_out);

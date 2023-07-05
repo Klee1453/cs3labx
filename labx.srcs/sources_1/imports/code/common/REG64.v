@@ -13,3 +13,18 @@ module REG64(
 		else if (CE) Q <= D;
 
 endmodule
+
+
+module REG64_PC(
+                    input clk,
+					input rst,
+					input CE,
+					input [63:0]D,
+					output reg[63:0]Q
+					);
+					
+	always @(posedge clk or posedge rst)
+		if (rst)  Q <= 64'h80200000;
+		else if (CE) Q <= D;
+
+endmodule
