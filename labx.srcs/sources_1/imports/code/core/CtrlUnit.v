@@ -32,8 +32,8 @@ wire Lop   = opcode == 7'b0000011;
 wire Sop   = opcode == 7'b0100011;
 wire CSRop = opcode == 7'b1110011;  // Privileged instructions
 
-wire funct7_0  = funct7 == 7'h0;
-wire funct7_32 = funct7 == 7'h20;  // 7'b010000
+wire funct7_0  = funct7 == 7'b0000000;
+wire funct7_32 = funct7 == 7'b0100000;
 
 wire funct3_0 = funct3 == 3'h0;
 wire funct3_1 = funct3 == 3'h1;
@@ -44,35 +44,35 @@ wire funct3_5 = funct3 == 3'h5;
 wire funct3_6 = funct3 == 3'h6;
 wire funct3_7 = funct3 == 3'h7;
 
-wire ADD   = Rop  & funct3_0 & funct7_0;
-wire ADDW  = Rwop & funct3_0 & funct7_0;  // rv64i word-wide inst
-wire SUB   = Rop  & funct3_0 & funct7_32;
-wire SUBW  = Rwop & funct3_0 & funct7_32; // rv64i word-wide inst
-wire SLL   = Rop  & funct3_1 & funct7_0;
-wire SLLW  = Rwop & funct3_1 & funct7_0;  // rv64i word-wide inst
-wire SLT   = Rop  & funct3_2 & funct7_0;
-wire SLTU  = Rop  & funct3_3 & funct7_0;
-wire XOR   = Rop  & funct3_4 & funct7_0;
-wire SRL   = Rop  & funct3_5 & funct7_0;
-wire SRLW  = Rwop & funct3_5 & funct7_0;  // rv64i word-wide inst
-wire SRA   = Rop  & funct3_5 & funct7_32;
-wire SRAW  = Rwop & funct3_5 & funct7_32; // rv64i word-wide inst
-wire OR    = Rop  & funct3_6 & funct7_0;
-wire AND   = Rop  & funct3_7 & funct7_0;
+wire ADD    = Rop  & funct3_0 & funct7_0;
+wire ADDW   = Rwop & funct3_0 & funct7_0;
+wire SUB    = Rop  & funct3_0 & funct7_32;
+wire SUBW   = Rwop & funct3_0 & funct7_32;
+wire SLL    = Rop  & funct3_1 & funct7_0;
+wire SLLW   = Rwop & funct3_1 & funct7_0;
+wire SLT    = Rop  & funct3_2 & funct7_0;
+wire SLTU   = Rop  & funct3_3 & funct7_0;
+wire XOR    = Rop  & funct3_4 & funct7_0;
+wire SRL    = Rop  & funct3_5 & funct7_0;
+wire SRLW   = Rwop & funct3_5 & funct7_0;
+wire SRA    = Rop  & funct3_5 & funct7_32;
+wire SRAW   = Rwop & funct3_5 & funct7_32;
+wire OR     = Rop  & funct3_6 & funct7_0;
+wire AND    = Rop  & funct3_7 & funct7_0;
 
-wire ADDI  = Iop  & funct3_0;
-wire ADDIW = Iwop & funct3_0;             // rv64i word-wide inst
-wire SLTI  = Iop  & funct3_2;
-wire SLTIU = Iop  & funct3_3;
-wire XORI  = Iop  & funct3_4;
-wire ORI   = Iop  & funct3_6;
-wire ANDI  = Iop  & funct3_7;
-wire SLLI  = Iop  & funct3_1 & (funct7[6:1] == 6'b0);
-wire SLLIW = Iwop & funct3_1 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
-wire SRLI  = Iop  & funct3_5 & (funct7[6:1] == 6'b0);
-wire SRLIW = Iwop & funct3_5 & (funct7[6:1] == 6'b0);          // rv64i word-wide inst
-wire SRAI  = Iop  & funct3_5 & (funct7[6:1] == 6'b010000);
-wire SRAIW = Iwop & funct3_5 & funct7_0;                       // rv64i word-wide inst
+wire ADDI   = Iop  & funct3_0;
+wire ADDIW  = Iwop & funct3_0;
+wire SLTI   = Iop  & funct3_2;
+wire SLTIU  = Iop  & funct3_3;
+wire XORI   = Iop  & funct3_4;
+wire ORI    = Iop  & funct3_6;
+wire ANDI   = Iop  & funct3_7;
+wire SLLI   = Iop  & funct3_1 & (funct7[6:1] == 6'b000000);
+wire SLLIW  = Iwop & funct3_1 & funct7_0;
+wire SRLI   = Iop  & funct3_5 & (funct7[6:1] == 6'b000000);
+wire SRLIW  = Iwop & funct3_5 & funct7_0;
+wire SRAI   = Iop  & funct3_5 & (funct7[6:1] == 6'b010000);
+wire SRAIW  = Iwop & funct3_5 & funct7_32;
 
 wire BEQ  = Bop & funct3_0;  // to fill sth. in
 wire BNE  = Bop & funct3_1;  // to fill sth. in
@@ -113,7 +113,7 @@ wire SFENCEVMA  = CSRop & (funct7 == 7'b0001001) & (funct3 == 3'b000) & (rd == 5
 wire illegal_inst = 0;  // TODO
 
 wire R_valid  = AND | OR | ADD | XOR | SLL | SRL | SRA | SUB | SLT | SLTU;
-wire Rw_valid = ADDW | SUBW | SLLW | SRLW | SRAIW;
+wire Rw_valid = ADDW | SUBW | SLLW | SRLW | SRAW;
 wire I_valid  = ANDI | ORI | ADDI | XORI | SLLI | SRLI | SRAI | SLTI | SLTIU;
 wire Iw_valid = ADDIW | SLLIW | SRLIW | SRAIW;
 wire B_valid  = BEQ | BNE | BLT | BGE | BLTU | BGEU;
